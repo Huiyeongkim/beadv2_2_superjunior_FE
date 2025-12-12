@@ -33,19 +33,19 @@
 
       <section class="dashboard">
         <div class="dashboard-nav">
-          <router-link to="/seller" class="nav-tab" :class="{ active: $route.path === '/seller' }">
+          <router-link to="/seller" class="nav-tab" :class="{ active: route.path === '/seller' }">
             대시보드
           </router-link>
-          <router-link to="/seller/products" class="nav-tab" :class="{ active: $route.path === '/seller/products' }">
+          <router-link to="/seller/products" class="nav-tab" :class="{ active: route.path === '/seller/products' }">
             내 상품 목록
           </router-link>
-          <router-link to="/group-purchases" class="nav-tab" :class="{ active: $route.path.startsWith('/group-purchases') }">
+          <router-link to="/group-purchases" class="nav-tab" :class="{ active: route.path.startsWith('/group-purchases') }">
             공동구매 관리
           </router-link>
-          <router-link to="/seller/settlement" class="nav-tab" :class="{ active: $route.path === '/seller/settlement' }">
+          <router-link to="/seller/settlement" class="nav-tab" :class="{ active: route.path === '/seller/settlement' }">
             정산 결과
           </router-link>
-          <router-link to="/seller/register/product-register" class="nav-tab" :class="{ active: $route.path === '/seller/register/product-register' }">
+          <router-link to="/seller/register/product-register" class="nav-tab" :class="{ active: route.path === '/seller/register/product-register' }">
             상품 등록
           </router-link>
         </div>
@@ -138,68 +138,66 @@
   </main>
 </template>
 
-<script>
-import { sellerProfile, getSellerProducts, sellerNotices, sellerQna } from '@/data/products'
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { sellerProfile, getSellerProducts} from '@/data/products'
 
-export default {
-  name: 'SellerDashboard',
-  data() {
-    return {
-      seller: { ...sellerProfile },
-      sellerProducts: getSellerProducts(sellerProfile.name),
-      notices: sellerNotices,
-      qna: sellerQna,
-      showEditModal: false,
-      editForm: {
-        name: '',
-        description: ''
-      },
-      badgesInput: ''
-    }
-  },
-  mounted() {
-    this.loadSellerInfo()
-  },
-  methods: {
-    loadSellerInfo() {
-      const savedSeller = JSON.parse(localStorage.getItem('seller_profile') || 'null')
-      if (savedSeller) {
-        this.seller = { ...this.seller, ...savedSeller }
-      }
-      this.editForm = {
-        name: this.seller.name,
-        description: this.seller.description
-      }
-      this.badgesInput = this.seller.badges ? this.seller.badges.join(', ') : ''
-    },
-    saveSellerInfo() {
-      const badges = this.badgesInput
-        .split(',')
-        .map(b => b.trim())
-        .filter(b => b.length > 0)
-      
-      const updatedSeller = {
-        ...this.seller,
-        name: this.editForm.name,
-        description: this.editForm.description,
-        badges: badges
-      }
-      
-      this.seller = updatedSeller
-      localStorage.setItem('seller_profile', JSON.stringify({
-        name: updatedSeller.name,
-        description: updatedSeller.description,
-        badges: updatedSeller.badges
-      }))
-      
-      alert('판매자 정보가 저장되었습니다.')
-      this.showEditModal = false
-    },
-    goToProduct(id) {
-      this.$router.push({ name: 'product-detail', params: { id } })
-    }
+const router = useRouter()
+const route = useRoute()
+
+const seller = ref({ ...sellerProfile })
+const sellerProducts = ref(getSellerProducts(sellerProfile.name))
+const showEditModal = ref(false)
+const editForm = ref({
+  name: '',
+  description: ''
+})
+const badgesInput = ref('')
+
+const loadSellerInfo = () => {
+  const savedSeller = JSON.parse(localStorage.getItem('seller_profile') || 'null')
+  if (savedSeller) {
+    seller.value = { ...seller.value, ...savedSeller }
   }
+  editForm.value = {
+    name: seller.value.name,
+    description: seller.value.description
+  }
+  badgesInput.value = seller.value.badges ? seller.value.badges.join(', ') : ''
 }
+
+const saveSellerInfo = () => {
+  const badges = badgesInput.value
+    .split(',')
+    .map(b => b.trim())
+    .filter(b => b.length > 0)
+  
+  const updatedSeller = {
+    ...seller.value,
+    name: editForm.value.name,
+    description: editForm.value.description,
+    badges: badges
+  }
+  
+  seller.value = updatedSeller
+  localStorage.setItem('seller_profile', JSON.stringify({
+    name: updatedSeller.name,
+    description: updatedSeller.description,
+    badges: updatedSeller.badges
+  }))
+  
+  alert('판매자 정보가 저장되었습니다.')
+  showEditModal.value = false
+}
+
+const goToProduct = (id) => {
+  router.push({ name: 'product-detail', params: { id } })
+}
+
+onMounted(() => {
+  loadSellerInfo()
+})
 </script>
 
 <style scoped>

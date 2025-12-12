@@ -199,133 +199,122 @@
   </main>
 </template>
 
-<script>
-export default {
-  name: 'ProductRegister',
-  data() {
-    return {
-      form: {
-        title: '',
-        subtitle: '',
-        category: '',
-        originalPrice: null,
-        currentPrice: null,
-        mainImage: '',
-        additionalImages: [''],
-        description: '',
-        detailedDescription: '',
-        specs: [],
-        shipping: '',
-        timeLeft: '',
-        targetCount: null
-      },
-      specsText: '',
-      loading: false
-    }
-  },
-  computed: {
-    discountRate() {
-      if (!this.form.originalPrice || !this.form.currentPrice) return 0
-      return Math.round(((this.form.originalPrice - this.form.currentPrice) / this.form.originalPrice) * 100)
-    },
-    isFormValid() {
-      return (
-        this.form.title &&
-        this.form.category &&
-        this.form.originalPrice &&
-        this.form.currentPrice &&
-        this.form.mainImage &&
-        this.form.description &&
-        this.form.shipping &&
-        this.form.timeLeft &&
-        this.form.targetCount
-      )
-    }
-  },
-  mounted() {
-    // 판매자 권한 체크
-    //const role = localStorage.getItem('user_role')
-    // if (role !== 'seller') {
-    //   alert('판매자만 상품을 등록할 수 있습니다.')
-    //   this.$router.push('/seller/application')
-    // }
-  },
-  methods: {
-    addImageField() {
-      if (this.form.additionalImages.length < 5) {
-        this.form.additionalImages.push('')
-      }
-    },
-    removeImage(index) {
-      this.form.additionalImages.splice(index, 1)
-    },
-    handleCancel() {
-      if (confirm('작성 중인 내용이 사라집니다. 정말 취소하시겠습니까?')) {
-        this.$router.push('/seller')
-      }
-    },
-    async handleSubmit() {
-      if (!this.isFormValid) {
-        alert('모든 필수 항목을 입력해주세요.')
-        return
-      }
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { productApi } from '@/api/axios'
 
-      // 스펙 텍스트를 배열로 변환
-      this.form.specs = this.specsText
-        .split('\n')
-        .map(s => s.trim())
-        .filter(s => s.length > 0)
+const router = useRouter()
 
-      // 추가 이미지 필터링
-      const images = [
-        this.form.mainImage,
-        ...this.form.additionalImages.filter(img => img.trim().length > 0)
-      ]
+const form = ref({
+  title: '',
+  subtitle: '',
+  category: '',
+  originalPrice: null,
+  currentPrice: null,
+  mainImage: '',
+  additionalImages: [''],
+  description: '',
+  detailedDescription: '',
+  specs: [],
+  shipping: '',
+  timeLeft: '',
+  targetCount: null
+})
 
-      this.loading = true
-      try {
-        // TODO: 실제 API 호출로 교체
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        
-        // 판매자 정보 가져오기
-        const sellerProfile = JSON.parse(localStorage.getItem('seller_profile') || '{}')
-        const sellerName = sellerProfile.name || '테크샵'
-        
-        const productData = {
-          ...this.form,
-          images,
-          image: this.form.mainImage, // 대표 이미지
-          id: Date.now(), // 임시 ID
-          seller: sellerName,
-          currentCount: 0,
-          rating: 0,
-          reviewCount: 0,
-          badges: ['신규'],
-          discountRate: this.discountRate,
-          createdAt: new Date().toISOString()
-        }
-        
-        // 목업: 상품 데이터 저장 (판매자용)
-        const existingProducts = JSON.parse(localStorage.getItem('seller_products') || '[]')
-        existingProducts.push(productData)
-        localStorage.setItem('seller_products', JSON.stringify(existingProducts))
-        
-        // 전체 상품 목록에도 추가 (일반 사용자도 볼 수 있도록)
-        const allProducts = JSON.parse(localStorage.getItem('all_products') || '[]')
-        allProducts.push(productData)
-        localStorage.setItem('all_products', JSON.stringify(allProducts))
-        
-        alert('공동구매 상품이 성공적으로 등록되었습니다!')
-        this.$router.push('/seller/products')
-      } catch (error) {
-        alert('상품 등록에 실패했습니다. 다시 시도해주세요.')
-        console.error('Product registration error:', error)
-      } finally {
-        this.loading = false
-      }
-    }
+const specsText = ref('')
+const loading = ref(false)
+
+const discountRate = computed(() => {
+  if (!form.value.originalPrice || !form.value.currentPrice) return 0
+  return Math.round(((form.value.originalPrice - form.value.currentPrice) / form.value.originalPrice) * 100)
+})
+
+const isFormValid = computed(() => {
+  return (
+    form.value.title &&
+    form.value.category &&
+    form.value.originalPrice &&
+    form.value.currentPrice &&
+    form.value.mainImage &&
+    form.value.description &&
+    form.value.shipping &&
+    form.value.timeLeft &&
+    form.value.targetCount
+  )
+})
+
+const addImageField = () => {
+  if (form.value.additionalImages.length < 5) {
+    form.value.additionalImages.push('')
   }
 }
+
+const removeImage = (index) => {
+  form.value.additionalImages.splice(index, 1)
+}
+
+const handleCancel = () => {
+  if (confirm('작성 중인 내용이 사라집니다. 정말 취소하시겠습니까?')) {
+    router.push('/seller')
+  }
+}
+
+const handleSubmit = async () => {
+  if (!isFormValid.value) {
+    alert('모든 필수 항목을 입력해주세요.')
+    return
+  }
+
+  // 스펙 텍스트를 배열로 변환
+  form.value.specs = specsText.value
+    .split('\n')
+    .map(s => s.trim())
+    .filter(s => s.length > 0)
+
+  loading.value = true
+  try {
+    // API 요청 데이터 구성
+    const requestData = {
+      title: form.value.title,
+      subtitle: form.value.subtitle || null,
+      category: form.value.category,
+      originalPrice: form.value.originalPrice,
+      currentPrice: form.value.currentPrice,
+      mainImage: form.value.mainImage,
+      additionalImages: form.value.additionalImages.filter(img => img.trim().length > 0),
+      description: form.value.description,
+      detailedDescription: form.value.detailedDescription || null,
+      specs: form.value.specs,
+      shipping: form.value.shipping,
+      timeLeft: form.value.timeLeft,
+      targetCount: form.value.targetCount
+    }
+    
+    // API 호출
+    const response = await productApi.createProduct(requestData)
+    
+    if (response.status === 201 || response.data) {
+      alert('상품이 성공적으로 등록되었습니다!')
+      router.push('/seller/products')
+    }
+  } catch (error) {
+    const errorMessage = error.response?.data?.message || '상품 등록에 실패했습니다. 다시 시도해주세요.'
+    alert(errorMessage)
+    console.error('Product registration error:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  // 판매자 권한 체크
+  //const role = localStorage.getItem('user_role')
+  // if (role !== 'seller') {
+  //   alert('판매자만 상품을 등록할 수 있습니다.')
+  //   router.push('/seller/application')
+  // }
+})
 </script>
 
 <style scoped>

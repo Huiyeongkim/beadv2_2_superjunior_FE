@@ -173,140 +173,140 @@
   </section>
 </template>
 
-<script>
-export default {
-  name: 'GroupPurchaseEdit',
-  props: {
-    id: {
-      type: String,
-      required: true
+<script setup>
+import { ref, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
+
+// eslint-disable-next-line no-undef
+const props = defineProps({
+  id: {
+    type: String,
+    required: true
+  }
+})
+
+const router = useRouter()
+
+const groupPurchase = ref(null)
+const form = ref({
+  title: '',
+  category: '',
+  description: '',
+  productName: '',
+  productImage: '',
+  minQuantity: null,
+  maxQuantity: null,
+  originalPrice: null,
+  discountPrice: null,
+  status: 'OPEN',
+  startDate: '',
+  endDate: ''
+})
+
+const loading = ref(false)
+
+const discountRate = computed(() => {
+  if (!form.value.originalPrice || !form.value.discountPrice) return 0
+  return Math.round(((form.value.originalPrice - form.value.discountPrice) / form.value.originalPrice) * 100)
+})
+
+const isFormValid = computed(() => {
+  return (
+    form.value.title &&
+    form.value.category &&
+    form.value.description &&
+    form.value.productName &&
+    form.value.minQuantity &&
+    form.value.maxQuantity &&
+    form.value.originalPrice &&
+    form.value.discountPrice &&
+    form.value.status &&
+    form.value.minQuantity <= form.value.maxQuantity
+  )
+})
+
+const loadGroupPurchase = () => {
+  const groupPurchases = JSON.parse(localStorage.getItem('group_purchases') || '[]')
+  groupPurchase.value = groupPurchases.find((gp) => gp.id === Number(props.id))
+
+  if (groupPurchase.value) {
+    // 폼에 기존 데이터 채우기
+    form.value = {
+      title: groupPurchase.value.title,
+      category: groupPurchase.value.category,
+      description: groupPurchase.value.description,
+      productName: groupPurchase.value.productName,
+      productImage: groupPurchase.value.productImage || '',
+      minQuantity: groupPurchase.value.minQuantity,
+      maxQuantity: groupPurchase.value.maxQuantity,
+      originalPrice: groupPurchase.value.originalPrice,
+      discountPrice: groupPurchase.value.discountPrice,
+      status: groupPurchase.value.status,
+      startDate: groupPurchase.value.startDate
+        ? new Date(groupPurchase.value.startDate).toISOString().slice(0, 16)
+        : '',
+      endDate: groupPurchase.value.endDate
+        ? new Date(groupPurchase.value.endDate).toISOString().slice(0, 16)
+        : ''
     }
-  },
-  data() {
-    return {
-      groupPurchase: null,
-      form: {
-        title: '',
-        category: '',
-        description: '',
-        productName: '',
-        productImage: '',
-        minQuantity: null,
-        maxQuantity: null,
-        originalPrice: null,
-        discountPrice: null,
-        status: 'OPEN',
-        startDate: '',
-        endDate: ''
-      },
-      loading: false
-    }
-  },
-  computed: {
-    discountRate() {
-      if (!this.form.originalPrice || !this.form.discountPrice) return 0
-      return Math.round(((this.form.originalPrice - this.form.discountPrice) / this.form.originalPrice) * 100)
-    },
-    isFormValid() {
-      return (
-        this.form.title &&
-        this.form.category &&
-        this.form.description &&
-        this.form.productName &&
-        this.form.minQuantity &&
-        this.form.maxQuantity &&
-        this.form.originalPrice &&
-        this.form.discountPrice &&
-        this.form.status &&
-        this.form.minQuantity <= this.form.maxQuantity
-      )
-    }
-  },
-  created() {
-    this.loadGroupPurchase()
-  },
-  watch: {
-    id() {
-      this.loadGroupPurchase()
-    }
-  },
-  methods: {
-    loadGroupPurchase() {
-      const groupPurchases = JSON.parse(localStorage.getItem('group_purchases') || '[]')
-      this.groupPurchase = groupPurchases.find((gp) => gp.id === Number(this.id))
 
-      if (this.groupPurchase) {
-        // 폼에 기존 데이터 채우기
-        this.form = {
-          title: this.groupPurchase.title,
-          category: this.groupPurchase.category,
-          description: this.groupPurchase.description,
-          productName: this.groupPurchase.productName,
-          productImage: this.groupPurchase.productImage || '',
-          minQuantity: this.groupPurchase.minQuantity,
-          maxQuantity: this.groupPurchase.maxQuantity,
-          originalPrice: this.groupPurchase.originalPrice,
-          discountPrice: this.groupPurchase.discountPrice,
-          status: this.groupPurchase.status,
-          startDate: this.groupPurchase.startDate
-            ? new Date(this.groupPurchase.startDate).toISOString().slice(0, 16)
-            : '',
-          endDate: this.groupPurchase.endDate
-            ? new Date(this.groupPurchase.endDate).toISOString().slice(0, 16)
-            : ''
-        }
-
-        // 권한 체크
-        const currentUserEmail = localStorage.getItem('user_email')
-        if (this.groupPurchase.sellerId !== currentUserEmail) {
-          alert('수정 권한이 없습니다.')
-          this.$router.push({ name: 'group-purchase-detail', params: { id: this.id } })
-        }
-      }
-    },
-    handleCancel() {
-      this.$router.push({ name: 'group-purchase-detail', params: { id: this.id } })
-    },
-    async handleSubmit() {
-      if (!this.isFormValid) {
-        alert('모든 필수 항목을 입력해주세요.')
-        return
-      }
-
-      if (this.form.minQuantity > this.form.maxQuantity) {
-        alert('최소 수량은 최대 수량보다 작거나 같아야 합니다.')
-        return
-      }
-
-      this.loading = true
-      try {
-        // TODO: 실제 API 호출로 교체
-        await new Promise((resolve) => setTimeout(resolve, 2000))
-
-        const groupPurchases = JSON.parse(localStorage.getItem('group_purchases') || '[]')
-        const index = groupPurchases.findIndex((gp) => gp.id === Number(this.id))
-
-        if (index !== -1) {
-          // 기존 데이터 유지하면서 수정된 필드만 업데이트
-          groupPurchases[index] = {
-            ...groupPurchases[index],
-            ...this.form,
-            updatedAt: new Date().toISOString()
-          }
-
-          localStorage.setItem('group_purchases', JSON.stringify(groupPurchases))
-          alert('공동구매가 성공적으로 수정되었습니다!')
-          this.$router.push({ name: 'group-purchase-detail', params: { id: this.id } })
-        }
-      } catch (error) {
-        alert('공동구매 수정에 실패했습니다. 다시 시도해주세요.')
-        console.error('Group purchase update error:', error)
-      } finally {
-        this.loading = false
-      }
+    // 권한 체크
+    const currentUserEmail = localStorage.getItem('user_email')
+    if (groupPurchase.value.sellerId !== currentUserEmail) {
+      alert('수정 권한이 없습니다.')
+      router.push({ name: 'group-purchase-detail', params: { id: props.id } })
     }
   }
 }
+
+const handleCancel = () => {
+  router.push({ name: 'group-purchase-detail', params: { id: props.id } })
+}
+
+const handleSubmit = async () => {
+  if (!isFormValid.value) {
+    alert('모든 필수 항목을 입력해주세요.')
+    return
+  }
+
+  if (form.value.minQuantity > form.value.maxQuantity) {
+    alert('최소 수량은 최대 수량보다 작거나 같아야 합니다.')
+    return
+  }
+
+  loading.value = true
+  try {
+    // TODO: 실제 API 호출로 교체
+    await new Promise((resolve) => setTimeout(resolve, 2000))
+
+    const groupPurchases = JSON.parse(localStorage.getItem('group_purchases') || '[]')
+    const index = groupPurchases.findIndex((gp) => gp.id === Number(props.id))
+
+    if (index !== -1) {
+      // 기존 데이터 유지하면서 수정된 필드만 업데이트
+      groupPurchases[index] = {
+        ...groupPurchases[index],
+        ...form.value,
+        updatedAt: new Date().toISOString()
+      }
+
+      localStorage.setItem('group_purchases', JSON.stringify(groupPurchases))
+      alert('공동구매가 성공적으로 수정되었습니다!')
+      router.push({ name: 'group-purchase-detail', params: { id: props.id } })
+    }
+  } catch (error) {
+    alert('공동구매 수정에 실패했습니다. 다시 시도해주세요.')
+    console.error('Group purchase update error:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+loadGroupPurchase()
+
+watch(() => props.id, () => {
+  loadGroupPurchase()
+})
 </script>
 
 <style scoped>
@@ -494,5 +494,6 @@ export default {
   }
 }
 </style>
+
 
 

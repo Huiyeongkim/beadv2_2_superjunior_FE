@@ -108,97 +108,98 @@
   </section>
 </template>
 
-<script>
-export default {
-  name: 'GroupPurchaseDetail',
-  props: {
-    id: {
-      type: String,
-      required: true
-    }
-  },
-  data() {
-    return {
-      groupPurchase: null
-    }
-  },
-  computed: {
-    isOwner() {
-      if (!this.groupPurchase) return false
-      const currentUserEmail = localStorage.getItem('user_email')
-      return this.groupPurchase.sellerId === currentUserEmail
-    },
-    discountRate() {
-      if (!this.groupPurchase) return 0
-      return Math.round(
-        ((this.groupPurchase.originalPrice - this.groupPurchase.discountPrice) /
-          this.groupPurchase.originalPrice) *
-          100
-      )
-    }
-  },
-  created() {
-    this.loadGroupPurchase()
-  },
-  watch: {
-    id() {
-      this.loadGroupPurchase()
-    }
-  },
-  methods: {
-    loadGroupPurchase() {
-      const groupPurchases = JSON.parse(localStorage.getItem('group_purchases') || '[]')
-      this.groupPurchase = groupPurchases.find((gp) => gp.id === Number(this.id))
-    },
-    getStatusText(status) {
-      const statusMap = {
-        SCHEDULED: '예정됨',
-        OPEN: '진행 중',
-        SUCCESS: '성공',
-        FAILED: '실패'
-      }
-      return statusMap[status] || status
-    },
-    formatDate(dateString) {
-      if (!dateString) return '-'
-      const date = new Date(dateString)
-      return date.toLocaleString('ko-KR', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
-    },
-    getTimeRemaining(endDate) {
-      const now = new Date()
-      const end = new Date(endDate)
-      const diff = end - now
+<script setup>
+import { ref, computed, watch} from 'vue'
+import { useRouter } from 'vue-router'
 
-      if (diff < 0) return '종료됨'
+// eslint-disable-next-line no-undef
+const props = defineProps({
+  id: {
+    type: String,
+    required: true
+  }
+})
 
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+const router = useRouter()
+const groupPurchase = ref(null)
 
-      if (days > 0) return `${days}일 ${hours}시간 남음`
-      if (hours > 0) return `${hours}시간 ${minutes}분 남음`
-      return `${minutes}분 남음`
-    },
-    goToEdit() {
-      this.$router.push({ name: 'group-purchase-edit', params: { id: this.id } })
-    },
-    handleDelete() {
-      if (confirm('정말 이 공동구매를 삭제하시겠습니까?')) {
-        const groupPurchases = JSON.parse(localStorage.getItem('group_purchases') || '[]')
-        const filtered = groupPurchases.filter((gp) => gp.id !== Number(this.id))
-        localStorage.setItem('group_purchases', JSON.stringify(filtered))
-        alert('공동구매가 삭제되었습니다.')
-        this.$router.push('/group-purchases')
-      }
-    }
+const isOwner = computed(() => {
+  if (!groupPurchase.value) return false
+  const currentUserEmail = localStorage.getItem('user_email')
+  return groupPurchase.value.sellerId === currentUserEmail
+})
+
+const discountRate = computed(() => {
+  if (!groupPurchase.value) return 0
+  return Math.round(
+    ((groupPurchase.value.originalPrice - groupPurchase.value.discountPrice) /
+      groupPurchase.value.originalPrice) *
+      100
+  )
+})
+
+const loadGroupPurchase = () => {
+  const groupPurchases = JSON.parse(localStorage.getItem('group_purchases') || '[]')
+  groupPurchase.value = groupPurchases.find((gp) => gp.id === Number(props.id))
+}
+
+const getStatusText = (status) => {
+  const statusMap = {
+    SCHEDULED: '예정됨',
+    OPEN: '진행 중',
+    SUCCESS: '성공',
+    FAILED: '실패'
+  }
+  return statusMap[status] || status
+}
+
+const formatDate = (dateString) => {
+  if (!dateString) return '-'
+  const date = new Date(dateString)
+  return date.toLocaleString('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+const getTimeRemaining = (endDate) => {
+  const now = new Date()
+  const end = new Date(endDate)
+  const diff = end - now
+
+  if (diff < 0) return '종료됨'
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+
+  if (days > 0) return `${days}일 ${hours}시간 남음`
+  if (hours > 0) return `${hours}시간 ${minutes}분 남음`
+  return `${minutes}분 남음`
+}
+
+const goToEdit = () => {
+  router.push({ name: 'group-purchase-edit', params: { id: props.id } })
+}
+
+const handleDelete = () => {
+  if (confirm('정말 이 공동구매를 삭제하시겠습니까?')) {
+    const groupPurchases = JSON.parse(localStorage.getItem('group_purchases') || '[]')
+    const filtered = groupPurchases.filter((gp) => gp.id !== Number(props.id))
+    localStorage.setItem('group_purchases', JSON.stringify(filtered))
+    alert('공동구매가 삭제되었습니다.')
+    router.push('/group-purchases')
   }
 }
+
+loadGroupPurchase()
+
+watch(() => props.id, () => {
+  loadGroupPurchase()
+})
 </script>
 
 <style scoped>
@@ -516,5 +517,6 @@ export default {
   }
 }
 </style>
+
 
 

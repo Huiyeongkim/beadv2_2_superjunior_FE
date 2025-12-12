@@ -1,7 +1,7 @@
 <template>
   <header class="site-header">
     <div class="container">
-      <div class="brand" @click="$router.push('/')">
+      <div class="brand" @click="router.push('/')">
         <span class="brand-icon">🛒</span>
         <span class="brand-text">0982 공구팔이</span>
       </div>
@@ -31,84 +31,91 @@
   </header>
 </template>
 
-<script>
-export default {
-  name: 'SiteHeader',
-  data() {
-    return {
-      isLoggedIn: false, // 추후 인증 상태로 변경
-      cartCount: 0,
-      notificationCount: 0
-    }
-  },
-  mounted() {
-    // 추후 실제 데이터로 교체
-    this.checkAuthStatus()
-    this.loadCartCount()
-    this.loadNotificationCount()
-    
-    // 로그인 상태 변경 감지 (다른 탭에서의 변경)
-    window.addEventListener('storage', this.handleStorageChange)
-    
-    // 같은 탭에서의 변경 감지를 위한 주기적 체크
-    this.authCheckInterval = setInterval(() => {
-      const token = localStorage.getItem('access_token')
-      if (!!token !== this.isLoggedIn) {
-        this.checkAuthStatus()
-      }
-    }, 1000)
-  },
-  beforeUnmount() {
-    window.removeEventListener('storage', this.handleStorageChange)
-    if (this.authCheckInterval) {
-      clearInterval(this.authCheckInterval)
-    }
-  },
-  methods: {
-    checkAuthStatus() {
-      const token = localStorage.getItem('access_token')
-      this.isLoggedIn = !!token
-      // 로그인 상태가 변경되면 컴포넌트 업데이트
-      this.$forceUpdate()
-    },
-    loadCartCount() {
-      // 추후 API 호출로 교체
-      this.cartCount = 3
-    },
-    loadNotificationCount() {
-      // 추후 API 호출로 교체
-      this.notificationCount = 2
-    },
-    goToCart() {
-      this.$router.push('/cart')
-    },
-    goToNotifications() {
-      this.$router.push('/me/notifications')
-    },
-    goToMyPage() {
-      this.$router.push('/me/profile')
-    },
-    goToSellerPage() {
-      this.$router.push('/seller')
-    },
-    handleStorageChange(e) {
-      if (e.key === 'access_token') {
-        this.checkAuthStatus()
-      }
-    },
-    handleLogout() {
-      if (confirm('로그아웃 하시겠습니까?')) {
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('user_role')
-        localStorage.removeItem('user_email')
-        localStorage.removeItem('user_data')
-        localStorage.removeItem('user_profile')
-        this.isLoggedIn = false
-        this.$router.push('/')
-      }
-    }
+<script setup>
+import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+const isLoggedIn = ref(false)
+const cartCount = ref(0)
+const notificationCount = ref(0)
+let authCheckInterval = null
+
+const checkAuthStatus = () => {
+  const token = localStorage.getItem('access_token')
+  isLoggedIn.value = !!token
+}
+
+const loadCartCount = () => {
+  // 추후 API 호출로 교체
+  cartCount.value = 3
+}
+
+const loadNotificationCount = () => {
+  // 추후 API 호출로 교체
+  notificationCount.value = 2
+}
+
+const goToCart = () => {
+  router.push('/cart')
+}
+
+const goToNotifications = () => {
+  router.push('/me/notifications')
+}
+
+const goToMyPage = () => {
+  router.push('/me/profile')
+}
+
+const goToSellerPage = () => {
+  router.push('/seller')
+}
+
+const handleStorageChange = (e) => {
+  if (e.key === 'access_token') {
+    checkAuthStatus()
   }
 }
+
+const handleLogout = () => {
+  if (confirm('로그아웃 하시겠습니까?')) {
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('user_role')
+    localStorage.removeItem('user_email')
+    localStorage.removeItem('user_data')
+    localStorage.removeItem('user_profile')
+    localStorage.removeItem('member_id')
+    isLoggedIn.value = false
+    router.push('/')
+  }
+}
+
+onMounted(() => {
+  // 추후 실제 데이터로 교체
+  checkAuthStatus()
+  loadCartCount()
+  loadNotificationCount()
+  
+  // 로그인 상태 변경 감지 (다른 탭에서의 변경)
+  window.addEventListener('storage', handleStorageChange)
+  
+  // 같은 탭에서의 변경 감지를 위한 주기적 체크
+  authCheckInterval = setInterval(() => {
+    const token = localStorage.getItem('access_token')
+    if (!!token !== isLoggedIn.value) {
+      checkAuthStatus()
+    }
+  }, 1000)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('storage', handleStorageChange)
+  if (authCheckInterval) {
+    clearInterval(authCheckInterval)
+  }
+})
 </script>
 
 <style scoped>

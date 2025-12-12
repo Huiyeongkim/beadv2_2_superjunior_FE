@@ -96,68 +96,65 @@
   </section>
 </template>
 
-<script>
+<script setup>
+import { ref, watch, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { getProductById, sellerNotices, sellerQna } from '@/data/products'
 
-export default {
-  name: 'ProductDetail',
-  props: {
-    id: {
-      type: String,
-      required: true
-    }
-  },
-  data() {
-    return {
-      product: null,
-      sellerNotices,
-      sellerQna,
-      selectedImage: null
-    }
-  },
-  created() {
-    this.loadProduct()
-  },
-  watch: {
-    id() {
-      this.loadProduct()
-    }
-  },
-  methods: {
-    loadProduct() {
-      // 먼저 기본 샘플 상품에서 찾기
-      this.product = getProductById(this.id)
-      
-      // 없으면 localStorage의 등록된 상품에서 찾기
-      if (!this.product) {
-        const allProducts = JSON.parse(localStorage.getItem('all_products') || '[]')
-        this.product = allProducts.find(p => p.id === Number(this.id))
-      }
-      
-      // 여전히 없으면 seller_products에서 찾기
-      if (!this.product) {
-        const sellerProducts = JSON.parse(localStorage.getItem('seller_products') || '[]')
-        this.product = sellerProducts.find(p => p.id === Number(this.id))
-      }
-    },
-    goToSeller() {
-      if (this.product && this.product.seller) {
-        // 판매자 프로필 페이지로 이동 (일반 유저용)
-        this.$router.push({ name: 'seller-profile' })
-      } else {
-        // 판매자 대시보드로 이동 (판매자용)
-        this.$router.push({ name: 'seller' })
-      }
-    },
-    addToCart() {
-      if (!this.product) return
-      const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-      cart.push({ productId: this.product.id, quantity: 1 })
-      localStorage.setItem('cart', JSON.stringify(cart))
-      this.$router.push({ name: 'cart' })
-    }
+// eslint-disable-next-line no-undef
+const props = defineProps({
+  id: {
+    type: String,
+    required: true
+  }
+})
+
+const router = useRouter()
+const product = ref(null)
+const selectedImage = ref(null)
+
+const loadProduct = () => {
+  // 먼저 기본 샘플 상품에서 찾기
+  product.value = getProductById(props.id)
+  
+  // 없으면 localStorage의 등록된 상품에서 찾기
+  if (!product.value) {
+    const allProducts = JSON.parse(localStorage.getItem('all_products') || '[]')
+    product.value = allProducts.find(p => p.id === Number(props.id))
+  }
+  
+  // 여전히 없으면 seller_products에서 찾기
+  if (!product.value) {
+    const sellerProducts = JSON.parse(localStorage.getItem('seller_products') || '[]')
+    product.value = sellerProducts.find(p => p.id === Number(props.id))
   }
 }
+
+const goToSeller = () => {
+  if (product.value && product.value.seller) {
+    // 판매자 프로필 페이지로 이동 (일반 유저용)
+    router.push({ name: 'seller-profile' })
+  } else {
+    // 판매자 대시보드로 이동 (판매자용)
+    router.push({ name: 'seller' })
+  }
+}
+
+const addToCart = () => {
+  if (!product.value) return
+  const cart = JSON.parse(localStorage.getItem('cart') || '[]')
+  cart.push({ productId: product.value.id, quantity: 1 })
+  localStorage.setItem('cart', JSON.stringify(cart))
+  router.push({ name: 'cart' })
+}
+
+onMounted(() => {
+  loadProduct()
+})
+
+watch(() => props.id, () => {
+  loadProduct()
+})
 </script>
 
 <style scoped>

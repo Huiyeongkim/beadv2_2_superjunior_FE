@@ -6,7 +6,8 @@
           <h1>공동구매 목록</h1>
           <p>진행 중인 공동구매를 확인하세요</p>
         </div>
-        <button v-if="isSeller" class="btn btn-primary" @click="goToCreate">
+        <!-- <button v-if="isSeller" class="btn btn-primary" @click="goToCreate"> -->
+        <button class="btn btn-primary" @click="goToCreate"> 
           + 공동구매 생성
         </button>
       </div>
@@ -48,43 +49,132 @@
         <button v-if="isSeller" class="btn btn-primary" @click="goToCreate">공동구매 생성하기</button>
       </div>
 
-      <div v-else class="group-purchase-grid">
+      <div v-else class="group-purchase-list-container">
+        <div class="gp-list-header">
+          <div class="gp-col gp-col-status">상태</div>
+          <div class="gp-col gp-col-title">제목</div>
+          <div class="gp-col gp-col-product">상품명</div>
+          <div class="gp-col gp-col-seller">판매자</div>
+          <div class="gp-col gp-col-price">가격</div>
+          <div class="gp-col gp-col-progress">진행률</div>
+          <div class="gp-col gp-col-time">남은 시간</div>
+          <div class="gp-col gp-col-action">주문내역</div>
+        </div>
         <article
           v-for="gp in filteredGroupPurchases"
           :key="gp.id"
-          class="group-purchase-card"
-          @click="goToDetail(gp.id)"
+          class="group-purchase-item"
+          :class="{ 'expanded': expandedId === gp.id }"
         >
-          <div class="card-header">
-            <div class="status-badge" :class="gp.status.toLowerCase()">
-              {{ getStatusText(gp.status) }}
+          <div class="gp-list-row" @click="handleCardClick(gp.id, gp)">
+            <div class="gp-col gp-col-status">
+              <span class="status-badge" :class="gp.status.toLowerCase()">
+                {{ getStatusText(gp.status) }}
+              </span>
             </div>
-            <span class="category">{{ gp.category }}</span>
+            <div class="gp-col gp-col-title">
+              <div class="title-wrapper">
+                <h3 class="title">{{ gp.title }}</h3>
+                <span class="category">{{ gp.category }}</span>
+              </div>
+            </div>
+            <div class="gp-col gp-col-product">
+              <span class="product-name">{{ gp.productName }}</span>
+            </div>
+            <div class="gp-col gp-col-seller">
+              <span class="seller-name">{{ gp.seller }}</span>
+            </div>
+            <div class="gp-col gp-col-price">
+              <div class="price-wrapper">
+                <span class="discount-price">₩{{ gp.discountPrice.toLocaleString() }}</span>
+                <span class="original-price">₩{{ gp.originalPrice.toLocaleString() }}</span>
+              </div>
+            </div>
+            <div class="gp-col gp-col-progress">
+              <div class="progress-wrapper">
+                <div class="progress-info">
+                  <span class="progress-text">{{ gp.currentCount }} / {{ gp.maxQuantity }}명</span>
+                  <span class="progress-percent">{{ Math.round((gp.currentCount / gp.maxQuantity) * 100) }}%</span>
+                </div>
+                <div class="progress-bar">
+                  <div
+                    class="progress-fill"
+                    :style="{ width: `${Math.min((gp.currentCount / gp.maxQuantity) * 100, 100)}%` }"
+                  ></div>
+                </div>
+              </div>
+            </div>
+            <div class="gp-col gp-col-time">
+              <span class="time-text">
+                <span v-if="gp.endDate">{{ getTimeRemaining(gp.endDate) }}</span>
+                <span v-else>기간 미정</span>
+              </span>
+            </div>
+            <div class="gp-col gp-col-action">
+              <button 
+                v-if="isSeller && isOwner(gp)" 
+                class="expand-btn"
+                @click.stop="handleCardClick(gp.id, gp)"
+              >
+                <span>{{ expandedId === gp.id ? '▼' : '▶' }}</span>
+              </button>
+              <span v-else class="no-action">-</span>
+            </div>
           </div>
-          <h3 class="title">{{ gp.title }}</h3>
-          <p class="product-name">{{ gp.productName }}</p>
-          <div class="seller-info">
-            <span>판매자: {{ gp.seller }}</span>
-          </div>
-          <div class="price-info">
-            <span class="discount-price">₩{{ gp.discountPrice.toLocaleString() }}</span>
-            <span class="original-price">₩{{ gp.originalPrice.toLocaleString() }}</span>
-          </div>
-          <div class="quantity-info">
-            <span>참여자: {{ gp.currentCount }}명</span>
-            <span>목표: {{ gp.minQuantity }}~{{ gp.maxQuantity }}명</span>
-          </div>
-          <div class="progress-bar">
-            <div
-              class="progress-fill"
-              :style="{ width: `${Math.min((gp.currentCount / gp.maxQuantity) * 100, 100)}%` }"
-            ></div>
-          </div>
-          <div class="time-info">
-            <span v-if="gp.endDate">
-              {{ getTimeRemaining(gp.endDate) }}
-            </span>
-            <span v-else>기간 미정</span>
+          
+          <!-- 주문 내역 드롭다운 (판매자만) -->
+          <!-- <div v-if="isSeller && isOwner(gp) && expandedId === gp.id" class="order-dropdown"> -->
+          <div v-if="expandedId === gp.id" class="order-dropdown">
+            <div class="order-header-section">
+              <h4>주문 내역</h4>
+              <span class="order-count">총 {{ getOrdersForGroupPurchase(gp.id).length }}건</span>
+            </div>
+            <div v-if="getOrdersForGroupPurchase(gp.id).length === 0" class="no-orders">
+              <p>아직 주문 내역이 없습니다.</p>
+            </div>
+            <div v-else class="order-list">
+              <div class="order-list-header">
+                <div class="order-col order-col-number">주문번호</div>
+                <div class="order-col order-col-date">주문일자</div>
+                <div class="order-col order-col-customer">구매자</div>
+                <div class="order-col order-col-product">상품명</div>
+                <div class="order-col order-col-quantity">수량</div>
+                <div class="order-col order-col-amount">결제금액</div>
+                <div class="order-col order-col-status">상태</div>
+              </div>
+              <div
+                v-for="order in getOrdersForGroupPurchase(gp.id)"
+                :key="order.id"
+                class="order-item-row"
+              >
+                <div class="order-col order-col-number">
+                  <span class="order-number-text">{{ order.orderNumber || `ORD-${order.id}` }}</span>
+                </div>
+                <div class="order-col order-col-date">
+                  <span class="order-date-text">{{ formatDate(order.date || order.createdAt) }}</span>
+                </div>
+                <div class="order-col order-col-customer">
+                  <div class="customer-info">
+                    <span class="customer-name">{{ order.customerName || order.name || '익명' }}</span>
+                    <span v-if="order.email" class="customer-email">{{ order.email }}</span>
+                  </div>
+                </div>
+                <div class="order-col order-col-product">
+                  <span class="product-name-text">{{ (order.products && order.products[0]) ? (order.products[0].title || order.products[0].productName) : (gp.productName) }}</span>
+                </div>
+                <div class="order-col order-col-quantity">
+                  <span class="quantity-text">{{ (order.products && order.products[0]) ? (order.products[0].quantity || 1) : (order.quantity || 1) }}개</span>
+                </div>
+                <div class="order-col order-col-amount">
+                  <span class="amount-text">₩{{ (order.totalAmount || (order.price || gp.discountPrice) * (order.quantity || 1)).toLocaleString() }}</span>
+                </div>
+                <div class="order-col order-col-status">
+                  <span class="order-status" :class="order.status || 'pending'">
+                    {{ getOrderStatusText(order.status) }}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </article>
       </div>
@@ -92,87 +182,219 @@
   </main>
 </template>
 
-<script>
-export default {
-  name: 'GroupPurchaseList',
-  data() {
-    return {
-      groupPurchases: [],
-      keyword: '',
-      statusFilter: '',
-      categoryFilter: ''
-    }
-  },
-  computed: {
-    isSeller() {
-      return localStorage.getItem('user_role') === 'seller'
-    },
-    filteredGroupPurchases() {
-      let result = [...this.groupPurchases]
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 
-      if (this.keyword) {
-        const keyword = this.keyword.toLowerCase()
-        result = result.filter(
-          (gp) =>
-            gp.title.toLowerCase().includes(keyword) ||
-            gp.productName.toLowerCase().includes(keyword) ||
-            gp.seller.toLowerCase().includes(keyword)
-        )
-      }
+const router = useRouter()
 
-      if (this.statusFilter) {
-        result = result.filter((gp) => gp.status === this.statusFilter)
-      }
+const groupPurchases = ref([])
+const keyword = ref('')
+const statusFilter = ref('')
+const categoryFilter = ref('')
+const expandedId = ref(null)
 
-      if (this.categoryFilter) {
-        result = result.filter((gp) => gp.category === this.categoryFilter)
-      }
+const isSeller = computed(() => {
+  return localStorage.getItem('user_role') === 'seller'
+})
 
-      return result
-    }
-  },
-  mounted() {
-    this.loadGroupPurchases()
-  },
-  methods: {
-    loadGroupPurchases() {
-      this.groupPurchases = JSON.parse(localStorage.getItem('group_purchases') || '[]')
-    },
-    search() {
-      // 검색은 computed에서 처리
-    },
-    getStatusText(status) {
-      const statusMap = {
-        SCHEDULED: '예정됨',
-        OPEN: '진행 중',
-        SUCCESS: '성공',
-        FAILED: '실패'
-      }
-      return statusMap[status] || status
-    },
-    getTimeRemaining(endDate) {
-      const now = new Date()
-      const end = new Date(endDate)
-      const diff = end - now
+const currentSellerId = computed(() => {
+  return localStorage.getItem('user_email') || ''
+})
 
-      if (diff < 0) return '종료됨'
+const filteredGroupPurchases = computed(() => {
+  let result = [...groupPurchases.value]
 
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+  if (keyword.value) {
+    const keywordLower = keyword.value.toLowerCase()
+    result = result.filter(
+      (gp) =>
+        gp.title.toLowerCase().includes(keywordLower) ||
+        gp.productName.toLowerCase().includes(keywordLower) ||
+        gp.seller.toLowerCase().includes(keywordLower)
+    )
+  }
 
-      if (days > 0) return `${days}일 ${hours}시간 남음`
-      if (hours > 0) return `${hours}시간 ${minutes}분 남음`
-      return `${minutes}분 남음`
-    },
-    goToDetail(id) {
-      this.$router.push({ name: 'group-purchase-detail', params: { id } })
-    },
-    goToCreate() {
-      this.$router.push({ name: 'group-purchase-create' })
-    }
+  if (statusFilter.value) {
+    result = result.filter((gp) => gp.status === statusFilter.value)
+  }
+
+  if (categoryFilter.value) {
+    result = result.filter((gp) => gp.category === categoryFilter.value)
+  }
+
+  return result
+})
+
+const loadGroupPurchases = () => {
+  groupPurchases.value = JSON.parse(localStorage.getItem('group_purchases') || '[]')
+}
+
+const search = () => {
+  // 검색은 computed에서 처리
+}
+
+const getStatusText = (status) => {
+  const statusMap = {
+    SCHEDULED: '예정됨',
+    OPEN: '진행 중',
+    SUCCESS: '성공',
+    FAILED: '실패'
+  }
+  return statusMap[status] || status
+}
+
+const getTimeRemaining = (endDate) => {
+  const now = new Date()
+  const end = new Date(endDate)
+  const diff = end - now
+
+  if (diff < 0) return '종료됨'
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+
+  if (days > 0) return `${days}일 ${hours}시간 남음`
+  if (hours > 0) return `${hours}시간 ${minutes}분 남음`
+  return `${minutes}분 남음`
+}
+
+const isOwner = (gp) => {
+  return gp.sellerId === currentSellerId.value
+}
+
+const handleCardClick = (id, gp) => {
+  if (isSeller.value && isOwner(gp)) {
+    // 판매자이고 소유자인 경우 드롭다운 토글
+    expandedId.value = expandedId.value === id ? null : id
+  } else {
+    // 일반 사용자이거나 소유자가 아닌 경우 상세 페이지로 이동
+    expandedId.value = expandedId.value === id ? null : id
   }
 }
+
+// const goToDetail = (id) => {
+//   router.push({ name: 'group-purchase-detail', params: { id } })
+// }
+
+const goToCreate = () => {
+  router.push({ name: 'group-purchase-create' })
+}
+
+const getOrdersForGroupPurchase = (groupId) => {
+  // localStorage에서 주문 내역 가져오기
+  const allOrders = JSON.parse(localStorage.getItem('orders') || '[]')
+  
+  // 공동구매의 participants를 기반으로 주문 내역 생성
+  const gp = groupPurchases.value.find(g => g.id === groupId)
+  if (!gp) return []
+  
+  let orders = []
+  
+  // participants가 있으면 주문 내역으로 변환
+  if (gp.participants && gp.participants.length > 0) {
+    orders = gp.participants.map((participant, index) => ({
+      id: `order-${groupId}-${index}`,
+      orderNumber: `ORD-${groupId}-${index + 1}`,
+      date: participant.date || participant.createdAt || new Date().toISOString(),
+      customerName: participant.name || participant.customerName || '익명',
+      email: participant.email || '',
+      quantity: participant.quantity || 1,
+      price: gp.discountPrice,
+      totalAmount: (participant.quantity || 1) * gp.discountPrice,
+      status: participant.status || 'completed',
+      products: [{
+        id: groupId,
+        title: gp.productName,
+        quantity: participant.quantity || 1,
+        price: gp.discountPrice
+      }]
+    }))
+  }
+  
+  // participants가 없으면 localStorage의 주문 내역에서 필터링
+  if (orders.length === 0) {
+    orders = allOrders.filter(order => {
+      // 주문 내역에 groupPurchaseId가 있으면 매칭
+      if (order.groupPurchaseId === groupId) return true
+      // 주문 내역의 제품명이 공동구매 제품명과 일치하면 매칭
+      if (order.products && order.products.some(p => p.title === gp.productName)) return true
+      return false
+    })
+  }
+  
+  // 실제 주문 내역이 없으면 예시 데이터 생성
+  if (orders.length === 0) {
+    const now = new Date()
+    const exampleCustomers = [
+      { name: '김철수', email: 'kim@example.com' },
+      { name: '이영희', email: 'lee@example.com' },
+      { name: '박민수', email: 'park@example.com' },
+      { name: '최지은', email: 'choi@example.com' },
+      { name: '정대현', email: 'jung@example.com' }
+    ]
+    
+    const statuses = ['completed', 'shipping', 'pending', 'delivered']
+    
+    // 공동구매 참여자 수만큼 예시 주문 생성 (최대 5개)
+    const orderCount = Math.min(gp.currentCount || 3, 5)
+    
+    orders = Array.from({ length: orderCount }, (_, index) => {
+      const customer = exampleCustomers[index % exampleCustomers.length]
+      const quantity = Math.floor(Math.random() * 3) + 1 // 1~3개
+      const orderDate = new Date(now.getTime() - (index * 24 * 60 * 60 * 1000)) // 최근 며칠 전
+      const status = statuses[index % statuses.length]
+      
+      return {
+        id: `example-order-${groupId}-${index}`,
+        orderNumber: `ORD-${groupId}-${String(index + 1).padStart(4, '0')}`,
+        date: orderDate.toISOString(),
+        createdAt: orderDate.toISOString(),
+        customerName: customer.name,
+        email: customer.email,
+        quantity: quantity,
+        price: gp.discountPrice,
+        totalAmount: quantity * gp.discountPrice,
+        status: status,
+        products: [{
+          id: groupId,
+          title: gp.productName,
+          productName: gp.productName,
+          quantity: quantity,
+          price: gp.discountPrice
+        }]
+      }
+    })
+  }
+  
+  return orders
+}
+
+const formatDate = (dateString) => {
+  if (!dateString) return '-'
+  const date = new Date(dateString)
+  return date.toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+}
+
+const getOrderStatusText = (status) => {
+  const statusMap = {
+    pending: '주문 대기',
+    completed: '결제 완료',
+    shipping: '배송 중',
+    delivered: '배송 완료',
+    cancelled: '취소됨'
+  }
+  return statusMap[status] || status || '주문 대기'
+}
+
+onMounted(() => {
+  loadGroupPurchases()
+})
 </script>
 
 <style scoped>
@@ -268,25 +490,481 @@ export default {
   font-size: 18px;
 }
 
-.group-purchase-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 24px;
+.group-purchase-list-container {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #1a1a1a;
 }
 
-.group-purchase-card {
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 20px;
-  padding: 24px;
+.gp-list-header {
+  display: grid;
+  grid-template-columns: 0.8fr 2fr 1.5fr 1fr 1.2fr 1.5fr 1.2fr 0.8fr;
+  gap: 16px;
+  padding: 14px 20px;
+  background: #0f0f0f;
+  border-bottom: 2px solid #2a2a2a;
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.group-purchase-item {
+  border-bottom: 1px solid #2a2a2a;
+  transition: background 0.2s;
+}
+
+.group-purchase-item:last-child {
+  border-bottom: none;
+}
+
+.group-purchase-item:hover {
+  background: #222222;
+}
+
+.group-purchase-item.expanded {
+  background: #1f1f1f;
+}
+
+.gp-list-row {
+  display: grid;
+  grid-template-columns: 0.8fr 2fr 1.5fr 1fr 1.2fr 1.5fr 1.2fr 0.8fr;
+  gap: 16px;
+  padding: 16px 20px;
   cursor: pointer;
+  align-items: center;
+}
+
+.gp-col {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  color: #e0e0e0;
+}
+
+.gp-col-status {
+  justify-content: flex-start;
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-badge.scheduled {
+  background: #f59f00;
+  color: #fff3bf;
+}
+
+.status-badge.open {
+  background: #51cf66;
+  color: #d3f9d8;
+}
+
+.status-badge.success {
+  background: #339af0;
+  color: #d0ebff;
+}
+
+.status-badge.failed {
+  background: #fa5252;
+  color: #ffe3e3;
+}
+
+.gp-col-title {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.title-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.category {
+  font-size: 11px;
+  color: #999;
+  font-weight: 600;
+}
+
+.gp-col-product {
+  color: #ffffff;
+}
+
+.product-name {
+  font-size: 13px;
+  margin: 0;
+}
+
+.gp-col-seller {
+  color: #999;
+}
+
+.seller-name {
+  font-size: 13px;
+}
+
+.gp-col-price {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.price-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.discount-price {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.original-price {
+  font-size: 11px;
+  color: #666;
+  text-decoration: line-through;
+}
+
+.gp-col-progress {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.progress-wrapper {
+  width: 100%;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  font-size: 11px;
+}
+
+.progress-text {
+  color: #999;
+}
+
+.progress-percent {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.progress-bar {
+  height: 6px;
+  background: #0f0f0f;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #ffffff;
+  border-radius: inherit;
+  transition: width 0.3s;
+}
+
+.gp-col-time {
+  color: #999;
+  font-size: 12px;
+}
+
+.time-text {
+  font-size: 12px;
+}
+
+.gp-col-action {
+  justify-content: center;
+}
+
+.expand-btn {
+  background: transparent;
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 12px;
   transition: all 0.2s;
 }
 
-.group-purchase-card:hover {
+.expand-btn:hover {
+  background: #2a2a2a;
   border-color: #4a4a4a;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  transform: translateY(-2px);
+}
+
+.no-action {
+  color: #666;
+  font-size: 12px;
+}
+
+@media (max-width: 1400px) {
+  .gp-list-header,
+  .gp-list-row {
+    grid-template-columns: 0.8fr 2fr 1.2fr 1fr 1.2fr 1.2fr 0.8fr;
+  }
+  
+  .gp-col-time {
+    display: none;
+  }
+}
+
+@media (max-width: 1024px) {
+  .gp-list-header,
+  .gp-list-row {
+    grid-template-columns: 0.8fr 2fr 1fr 1fr 1fr 0.8fr;
+  }
+  
+  .gp-col-product,
+  .gp-col-progress {
+    display: none;
+  }
+}
+
+.order-dropdown {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 2px solid #2a2a2a;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 1000px;
+  }
+}
+
+.order-header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.order-header-section h4 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+
+.order-count {
+  font-size: 14px;
+  color: #999;
+}
+
+.no-orders {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+}
+
+.no-orders p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.order-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.order-list-header {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1.2fr 1.5fr 0.8fr 1fr 1fr;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #0f0f0f;
+  border-bottom: 2px solid #2a2a2a;
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.order-item-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1.2fr 1.5fr 0.8fr 1fr 1fr;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #2a2a2a;
+  background: #1a1a1a;
+  transition: background 0.2s;
+  align-items: center;
+}
+
+.order-item-row:hover {
+  background: #222222;
+}
+
+.order-item-row:last-child {
+  border-bottom: none;
+}
+
+.order-col {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  color: #e0e0e0;
+  word-break: break-word;
+}
+
+.order-col-number {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.order-number-text {
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.order-col-date {
+  color: #999;
+}
+
+.order-date-text {
+  font-size: 12px;
+}
+
+.order-col-customer {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.customer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.customer-name {
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.customer-email {
+  font-size: 11px;
+  color: #999;
+}
+
+.order-col-product {
+  color: #ffffff;
+}
+
+.product-name-text {
+  font-size: 13px;
+}
+
+.order-col-quantity {
+  color: #e0e0e0;
+}
+
+.quantity-text {
+  font-size: 13px;
+}
+
+.order-col-amount {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.amount-text {
+  font-size: 14px;
+}
+
+.order-col-status {
+  justify-content: flex-start;
+}
+
+.order-status {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.order-status.pending {
+  background: #f59f00;
+  color: #fff3bf;
+}
+
+.order-status.completed {
+  background: #51cf66;
+  color: #d3f9d8;
+}
+
+.order-status.shipping {
+  background: #339af0;
+  color: #d0ebff;
+}
+
+.order-status.delivered {
+  background: #51cf66;
+  color: #d3f9d8;
+}
+
+.order-status.cancelled {
+  background: #fa5252;
+  color: #ffe3e3;
+}
+
+@media (max-width: 1200px) {
+  .order-list-header,
+  .order-item-row {
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 8px;
+  }
+  
+  .order-col-number {
+    grid-column: 1;
+  }
+  
+  .order-col-date {
+    grid-column: 2;
+  }
+  
+  .order-col-customer {
+    grid-column: 3;
+  }
+  
+  .order-col-status {
+    grid-column: 4;
+  }
+  
+  .order-col-product,
+  .order-col-quantity,
+  .order-col-amount {
+    display: none;
+  }
 }
 
 .card-header {

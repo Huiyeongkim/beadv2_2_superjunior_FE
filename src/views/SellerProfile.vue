@@ -93,65 +93,63 @@
   </main>
 </template>
 
-<script>
-import { sellerProfile, getSellerProducts, sellerNotices } from '@/data/products'
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { sellerProfile, getSellerProducts } from '@/data/products'
 
-export default {
-  name: 'SellerProfile',
-  props: {
-    sellerId: {
-      type: String,
-      default: null
-    }
-  },
-  data() {
-    return {
-      seller: { ...sellerProfile },
-      sellerProducts: [],
-      notices: sellerNotices
-    }
-  },
-  mounted() {
-    this.loadSellerInfo()
-    this.loadProducts()
-  },
-  methods: {
-    loadSellerInfo() {
-      // localStorage에서 저장된 판매자 정보 가져오기
-      const savedSeller = JSON.parse(localStorage.getItem('seller_profile') || 'null')
-      if (savedSeller) {
-        this.seller = {
-          ...this.seller,
-          ...savedSeller,
-          // 통계 정보는 기본값 유지
-          rating: this.seller.rating,
-          followers: this.seller.followers,
-          totalSales: this.seller.totalSales,
-          responseRate: this.seller.responseRate
-        }
-      }
-    },
-    loadProducts() {
-      // 판매자 이름으로 상품 가져오기
-      const sellerName = this.seller.name
-      const sampleProducts = getSellerProducts(sellerName)
-      
-      // localStorage에서 등록한 상품도 가져오기
-      const registeredProducts = JSON.parse(localStorage.getItem('seller_products') || '[]')
-      
-      // 두 목록 합치기 (중복 제거)
-      const allProducts = [...sampleProducts, ...registeredProducts]
-      const uniqueProducts = allProducts.filter((product, index, self) =>
-        index === self.findIndex(p => p.id === product.id)
-      )
-      
-      this.sellerProducts = uniqueProducts.slice(0, 12) // 최대 12개만 표시
-    },
-    goToProduct(id) {
-      this.$router.push({ name: 'product-detail', params: { id } })
+// const props = defineProps({
+//   sellerId: {
+//     type: String,
+//     default: null
+//   }
+// })
+
+const router = useRouter()
+const seller = ref({ ...sellerProfile })
+const sellerProducts = ref([])
+
+const loadSellerInfo = () => {
+  // localStorage에서 저장된 판매자 정보 가져오기
+  const savedSeller = JSON.parse(localStorage.getItem('seller_profile') || 'null')
+  if (savedSeller) {
+    seller.value = {
+      ...seller.value,
+      ...savedSeller,
+      // 통계 정보는 기본값 유지
+      rating: seller.value.rating,
+      followers: seller.value.followers,
+      totalSales: seller.value.totalSales,
+      responseRate: seller.value.responseRate
     }
   }
 }
+
+const loadProducts = () => {
+  // 판매자 이름으로 상품 가져오기
+  const sellerName = seller.value.name
+  const sampleProducts = getSellerProducts(sellerName)
+  
+  // localStorage에서 등록한 상품도 가져오기
+  const registeredProducts = JSON.parse(localStorage.getItem('seller_products') || '[]')
+  
+  // 두 목록 합치기 (중복 제거)
+  const allProducts = [...sampleProducts, ...registeredProducts]
+  const uniqueProducts = allProducts.filter((product, index, self) =>
+    index === self.findIndex(p => p.id === product.id)
+  )
+  
+  sellerProducts.value = uniqueProducts.slice(0, 12) // 최대 12개만 표시
+}
+
+const goToProduct = (id) => {
+  router.push({ name: 'product-detail', params: { id } })
+}
+
+onMounted(() => {
+  loadSellerInfo()
+  loadProducts()
+})
 </script>
 
 <style scoped>

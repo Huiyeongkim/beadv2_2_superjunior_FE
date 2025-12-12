@@ -79,73 +79,70 @@
   </main>
 </template>
 
-<script>
+<script setup>
+import { ref, computed } from 'vue'
 import { cartItemsMock, getProductById } from '@/data/products'
 
-export default {
-  name: 'CartPage',
-  data() {
-    return {
-      items: this.loadCartItems()
-    }
-  },
-  computed: {
-    totalPrice() {
-      return this.items.reduce(
-        (sum, item) => sum + item.product.currentPrice * item.quantity,
-        0
-      )
-    },
-    totalDiscount() {
-      return this.items.reduce(
-        (sum, item) =>
-          sum + (item.product.originalPrice - item.product.currentPrice) * item.quantity,
-        0
-      )
-    },
-    finalPrice() {
-      return this.totalPrice
-    },
-    totalQuantity() {
-      return this.items.reduce((sum, item) => sum + item.quantity, 0)
-    }
-  },
-  methods: {
-    loadCartItems() {
-      const stored = JSON.parse(localStorage.getItem('cart') || 'null')
-      const source = stored && stored.length > 0 ? stored : cartItemsMock
-      return source
-        .map((item) => {
-          const product = getProductById(item.productId)
-          if (!product) return null
-          return {
-            ...item,
-            option: item.option || '기본 옵션',
-            product
-          }
-        })
-        .filter(Boolean)
-    },
-    changeQuantity(productId, delta) {
-      this.items = this.items
-        .map((item) => {
-          if (item.productId !== productId) return item
-          const quantity = Math.max(1, item.quantity + delta)
-          return { ...item, quantity }
-        })
-      localStorage.setItem(
-        'cart',
-        JSON.stringify(this.items.map(({ productId: id, quantity }) => ({ productId: id, quantity })))
-      )
-    },
-    removeItem(productId) {
-      this.items = this.items.filter((item) => item.productId !== productId)
-      localStorage.setItem(
-        'cart',
-        JSON.stringify(this.items.map(({ productId: id, quantity }) => ({ productId: id, quantity })))
-      )
-    }
-  }
+const items = ref(loadCartItems())
+
+function loadCartItems() {
+  const stored = JSON.parse(localStorage.getItem('cart') || 'null')
+  const source = stored && stored.length > 0 ? stored : cartItemsMock
+  return source
+    .map((item) => {
+      const product = getProductById(item.productId)
+      if (!product) return null
+      return {
+        ...item,
+        option: item.option || '기본 옵션',
+        product
+      }
+    })
+    .filter(Boolean)
+}
+
+const totalPrice = computed(() => {
+  return items.value.reduce(
+    (sum, item) => sum + item.product.currentPrice * item.quantity,
+    0
+  )
+})
+
+const totalDiscount = computed(() => {
+  return items.value.reduce(
+    (sum, item) =>
+      sum + (item.product.originalPrice - item.product.currentPrice) * item.quantity,
+    0
+  )
+})
+
+const finalPrice = computed(() => {
+  return totalPrice.value
+})
+
+const totalQuantity = computed(() => {
+  return items.value.reduce((sum, item) => sum + item.quantity, 0)
+})
+
+const changeQuantity = (productId, delta) => {
+  items.value = items.value
+    .map((item) => {
+      if (item.productId !== productId) return item
+      const quantity = Math.max(1, item.quantity + delta)
+      return { ...item, quantity }
+    })
+  localStorage.setItem(
+    'cart',
+    JSON.stringify(items.value.map(({ productId: id, quantity }) => ({ productId: id, quantity })))
+  )
+}
+
+const removeItem = (productId) => {
+  items.value = items.value.filter((item) => item.productId !== productId)
+  localStorage.setItem(
+    'cart',
+    JSON.stringify(items.value.map(({ productId: id, quantity }) => ({ productId: id, quantity })))
+  )
 }
 </script>
 

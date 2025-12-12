@@ -169,109 +169,109 @@
   </main>
 </template>
 
-<script>
-export default {
-  name: 'GroupPurchaseCreate',
-  data() {
-    return {
-      form: {
-        title: '',
-        category: '',
-        description: '',
-        productName: '',
-        productImage: '',
-        minQuantity: null,
-        maxQuantity: null,
-        originalPrice: null,
-        discountPrice: null,
-        status: 'OPEN',
-        startDate: '',
-        endDate: ''
-      },
-      loading: false
-    }
-  },
-  computed: {
-    discountRate() {
-      if (!this.form.originalPrice || !this.form.discountPrice) return 0
-      return Math.round(((this.form.originalPrice - this.form.discountPrice) / this.form.originalPrice) * 100)
-    },
-    isFormValid() {
-      return (
-        this.form.title &&
-        this.form.category &&
-        this.form.description &&
-        this.form.productName &&
-        this.form.minQuantity &&
-        this.form.maxQuantity &&
-        this.form.originalPrice &&
-        this.form.discountPrice &&
-        this.form.status &&
-        this.form.minQuantity <= this.form.maxQuantity
-      )
-    }
-  },
-  mounted() {
-    // 판매자 권한 체크
-    const role = localStorage.getItem('user_role')
-    if (role !== 'seller') {
-      alert('판매자만 공동구매를 생성할 수 있습니다.')
-      this.$router.push('/seller/application')
-    }
-  },
-  methods: {
-    handleCancel() {
-      if (confirm('작성 중인 내용이 사라집니다. 정말 취소하시겠습니까?')) {
-        this.$router.push('/seller')
-      }
-    },
-    async handleSubmit() {
-      if (!this.isFormValid) {
-        alert('모든 필수 항목을 입력해주세요.')
-        return
-      }
+<script setup>
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 
-      if (this.form.minQuantity > this.form.maxQuantity) {
-        alert('최소 수량은 최대 수량보다 작거나 같아야 합니다.')
-        return
-      }
+const router = useRouter()
 
-      this.loading = true
-      try {
-        // TODO: 실제 API 호출로 교체
-        await new Promise(resolve => setTimeout(resolve, 2000))
+const form = ref({
+  title: '',
+  category: '',
+  description: '',
+  productName: '',
+  productImage: '',
+  minQuantity: null,
+  maxQuantity: null,
+  originalPrice: null,
+  discountPrice: null,
+  status: 'OPEN',
+  startDate: '',
+  endDate: ''
+})
 
-        // 판매자 정보 가져오기
-        const sellerProfile = JSON.parse(localStorage.getItem('seller_profile_data') || '{}')
-        const sellerName = sellerProfile.name || '테크샵'
+const loading = ref(false)
 
-        const groupPurchaseData = {
-          ...this.form,
-          id: Date.now(),
-          seller: sellerName,
-          sellerId: localStorage.getItem('user_email') || 'seller@example.com',
-          currentCount: 0,
-          participants: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
+const discountRate = computed(() => {
+  if (!form.value.originalPrice || !form.value.discountPrice) return 0
+  return Math.round(((form.value.originalPrice - form.value.discountPrice) / form.value.originalPrice) * 100)
+})
 
-        // localStorage에 저장
-        const existingGroupPurchases = JSON.parse(localStorage.getItem('group_purchases') || '[]')
-        existingGroupPurchases.push(groupPurchaseData)
-        localStorage.setItem('group_purchases', JSON.stringify(existingGroupPurchases))
+const isFormValid = computed(() => {
+  return (
+    form.value.title &&
+    form.value.category &&
+    form.value.description &&
+    form.value.productName &&
+    form.value.minQuantity &&
+    form.value.maxQuantity &&
+    form.value.originalPrice &&
+    form.value.discountPrice &&
+    form.value.status &&
+    form.value.minQuantity <= form.value.maxQuantity
+  )
+})
 
-        alert('공동구매가 성공적으로 생성되었습니다!')
-        this.$router.push('/group-purchases')
-      } catch (error) {
-        alert('공동구매 생성에 실패했습니다. 다시 시도해주세요.')
-        console.error('Group purchase creation error:', error)
-      } finally {
-        this.loading = false
-      }
-    }
+const handleCancel = () => {
+  if (confirm('작성 중인 내용이 사라집니다. 정말 취소하시겠습니까?')) {
+    router.push('/seller')
   }
 }
+
+const handleSubmit = async () => {
+  if (!isFormValid.value) {
+    alert('모든 필수 항목을 입력해주세요.')
+    return
+  }
+
+  if (form.value.minQuantity > form.value.maxQuantity) {
+    alert('최소 수량은 최대 수량보다 작거나 같아야 합니다.')
+    return
+  }
+
+  loading.value = true
+  try {
+    // TODO: 실제 API 호출로 교체
+    await new Promise(resolve => setTimeout(resolve, 2000))
+
+    // 판매자 정보 가져오기
+    const sellerProfile = JSON.parse(localStorage.getItem('seller_profile_data') || '{}')
+    const sellerName = sellerProfile.name || '테크샵'
+
+    const groupPurchaseData = {
+      ...form.value,
+      id: Date.now(),
+      seller: sellerName,
+      sellerId: localStorage.getItem('user_email') || 'seller@example.com',
+      currentCount: 0,
+      participants: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+
+    // localStorage에 저장
+    const existingGroupPurchases = JSON.parse(localStorage.getItem('group_purchases') || '[]')
+    existingGroupPurchases.push(groupPurchaseData)
+    localStorage.setItem('group_purchases', JSON.stringify(existingGroupPurchases))
+
+    alert('공동구매가 성공적으로 생성되었습니다!')
+    router.push('/group-purchases')
+  } catch (error) {
+    alert('공동구매 생성에 실패했습니다. 다시 시도해주세요.')
+    console.error('Group purchase creation error:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+// onMounted(() => {
+//   // 판매자 권한 체크
+//   const role = localStorage.getItem('user_role')
+//   if (role !== 'seller') {
+//     alert('판매자만 공동구매를 생성할 수 있습니다.')
+//     router.push('/seller/application')
+//   }
+// })
 </script>
 
 <style scoped>
@@ -453,5 +453,6 @@ export default {
   }
 }
 </style>
+
 
 

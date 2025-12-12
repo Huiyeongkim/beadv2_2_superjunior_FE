@@ -29,32 +29,28 @@
   </main>
 </template>
 
-<script>
-export default {
-  name: 'UserDirectory',
-  data() {
-    return {
-      q: '',
-      genre: '',
-      genres: ['액션','RPG','FPS','전략'],
-      users: [
-        { id: 1, name: '홍길동', genres: ['RPG'], styles: ['전략형'], following: true },
-        { id: 2, name: '아라', genres: ['FPS','전략'], styles: ['공격형'], following: false },
-        { id: 3, name: '민수', genres: ['액션'], styles: ['서포터'], following: false }
-      ]
-    }
-  },
-  computed: {
-    filtered() {
-      return this.users
-        .filter(u => (this.genre ? u.genres.includes(this.genre) : true))
-        .filter(u => (this.q ? u.name.toLowerCase().includes(this.q.toLowerCase()) : true))
-    }
-  },
-  methods: {
-    search() {},
-    toggleFollow(u) { u.following = !u.following }
-  }
+<script setup>
+import { ref, computed } from 'vue'
+
+const q = ref('')
+const genre = ref('')
+const genres = ['액션','RPG','FPS','전략']
+const users = ref([
+  { id: 1, name: '홍길동', genres: ['RPG'], styles: ['전략형'], following: true },
+  { id: 2, name: '아라', genres: ['FPS','전략'], styles: ['공격형'], following: false },
+  { id: 3, name: '민수', genres: ['액션'], styles: ['서포터'], following: false }
+])
+
+const filtered = computed(() => {
+  return users.value
+    .filter(u => (genre.value ? u.genres.includes(genre.value) : true))
+    .filter(u => (q.value ? u.name.toLowerCase().includes(q.value.toLowerCase()) : true))
+})
+
+const search = () => {}
+
+const toggleFollow = (u) => {
+  u.following = !u.following
 }
 </script>
 

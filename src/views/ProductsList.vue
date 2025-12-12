@@ -152,146 +152,150 @@
   </main>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, watch, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { sampleProducts } from '@/data/products'
 
-export default {
-  name: 'ProductsList',
-  data() {
-    return {
-      sampleProducts: [],
-      keyword: '',
-      selectedSection: 'popular',
-      selectedCategory: null,
-      sortBy: 'popular',
-      wishlist: new Set(),
-      categories: [
-        { id: 1, name: '전체', icon: '✨' },
-        { id: 2, name: '전자제품', icon: '📱' },
-        { id: 3, name: '패션', icon: '👟' },
-        { id: 4, name: '식품', icon: '🍎' },
-        { id: 5, name: '뷰티', icon: '💄' }
-      ],
-      sections: [
-        { id: 'popular', label: '인기' },
-        { id: 'new', label: '신규' },
-        { id: 'ending', label: '마감 임박' },
-        { id: 'discount', label: '할인율 높은 순' }
-      ]
-    }
-  },
-  mounted() {
-    this.loadProducts()
-  },
-  computed: {
-    participantsCount() {
-      return this.sampleProducts.reduce((sum, product) => sum + product.currentCount, 0)
-    },
-    totalSavings() {
-      return this.sampleProducts.reduce(
-        (sum, product) => sum + (product.originalPrice - product.currentPrice) * product.currentCount,
-        0
-      )
-    },
-    filteredProducts() {
-      let result = [...this.sampleProducts]
+const router = useRouter()
+const route = useRoute()
 
-      if (this.keyword) {
-        const keyword = this.keyword.toLowerCase()
-        result = result.filter(
-          (product) =>
-            product.title.toLowerCase().includes(keyword) ||
-            product.subtitle.toLowerCase().includes(keyword)
-        )
-      }
+const sampleProductsList = ref([])
+const keyword = ref('')
+const selectedSection = ref('popular')
+const selectedCategory = ref(null)
+const sortBy = ref('popular')
+const wishlist = ref(new Set())
 
-      if (this.selectedCategory && this.selectedCategory !== 1) {
-        const category = this.categories.find((item) => item.id === this.selectedCategory)?.name
-        result = result.filter((product) => product.category === category)
-      }
+const categories = [
+  { id: 1, name: '전체', icon: '✨' },
+  { id: 2, name: '전자제품', icon: '📱' },
+  { id: 3, name: '패션', icon: '👟' },
+  { id: 4, name: '식품', icon: '🍎' },
+  { id: 5, name: '뷰티', icon: '💄' }
+]
 
-      if (this.selectedSection === 'new') {
-        result = result.slice(-4)
-      } else if (this.selectedSection === 'ending') {
-        result = result.filter((product) => product.timeLeft.includes('시간'))
-      } else if (this.selectedSection === 'discount') {
-        result = result.sort((a, b) => b.discountRate - a.discountRate)
-      }
+const sections = [
+  { id: 'popular', label: '인기' },
+  { id: 'new', label: '신규' },
+  { id: 'ending', label: '마감 임박' },
+  { id: 'discount', label: '할인율 높은 순' }
+]
 
-      switch (this.sortBy) {
-        case 'discount':
-          result.sort((a, b) => b.discountRate - a.discountRate)
-          break
-        case 'priceLow':
-          result.sort((a, b) => a.currentPrice - b.currentPrice)
-          break
-        case 'priceHigh':
-          result.sort((a, b) => b.currentPrice - a.currentPrice)
-          break
-        case 'deadline':
-          result.sort((a, b) => {
-            const aTime = a.timeLeft.includes('시간') ? 0 : 1
-            const bTime = b.timeLeft.includes('시간') ? 0 : 1
-            return aTime - bTime
-          })
-          break
-        default:
-          result.sort((a, b) => b.currentCount / b.targetCount - a.currentCount / a.targetCount)
-      }
-      return result
-    }
-  },
-  watch: {
-    '$route.query.section': {
-      immediate: true,
-      handler(section) {
-        if (section && this.sections.some((item) => item.id === section)) {
-          this.selectedSection = section
-        }
-      }
-    }
-  },
-  methods: {
-    loadProducts() {
-      // 기본 샘플 상품과 등록된 상품 합치기
-      const registeredProducts = JSON.parse(localStorage.getItem('all_products') || '[]')
-      this.sampleProducts = [...sampleProducts, ...registeredProducts]
-    },
-    setSection(section) {
-      this.selectedSection = section
-      this.$router.replace({ query: { ...this.$route.query, section } })
-    },
-    filterByCategory(categoryId) {
-      this.selectedCategory = this.selectedCategory === categoryId ? null : categoryId
-    },
-    search() {
-      // 메서드 존재로 입력값과 동기화만 수행
-    },
-    resetFilters() {
-      this.keyword = ''
-      this.selectedCategory = null
-      this.selectedSection = 'popular'
-      this.sortBy = 'popular'
-    },
-    toggleWishlist(productId) {
-      if (this.wishlist.has(productId)) {
-        this.wishlist.delete(productId)
-      } else {
-        this.wishlist.add(productId)
-      }
-      this.wishlist = new Set(this.wishlist)
-    },
-    goToDetail(productId) {
-      this.$router.push({ name: 'product-detail', params: { id: productId } })
-    },
-    addToCart(product) {
-      const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-      cart.push({ productId: product.id, quantity: 1 })
-      localStorage.setItem('cart', JSON.stringify(cart))
-      this.$router.push({ name: 'cart' })
-    }
+const participantsCount = computed(() => {
+  return sampleProductsList.value.reduce((sum, product) => sum + product.currentCount, 0)
+})
+
+const totalSavings = computed(() => {
+  return sampleProductsList.value.reduce(
+    (sum, product) => sum + (product.originalPrice - product.currentPrice) * product.currentCount,
+    0
+  )
+})
+
+const filteredProducts = computed(() => {
+  let result = [...sampleProductsList.value]
+
+  if (keyword.value) {
+    const keywordLower = keyword.value.toLowerCase()
+    result = result.filter(
+      (product) =>
+        product.title.toLowerCase().includes(keywordLower) ||
+        product.subtitle.toLowerCase().includes(keywordLower)
+    )
   }
+
+  if (selectedCategory.value && selectedCategory.value !== 1) {
+    const category = categories.find((item) => item.id === selectedCategory.value)?.name
+    result = result.filter((product) => product.category === category)
+  }
+
+  if (selectedSection.value === 'new') {
+    result = result.slice(-4)
+  } else if (selectedSection.value === 'ending') {
+    result = result.filter((product) => product.timeLeft.includes('시간'))
+  } else if (selectedSection.value === 'discount') {
+    result = result.sort((a, b) => b.discountRate - a.discountRate)
+  }
+
+  switch (sortBy.value) {
+    case 'discount':
+      result.sort((a, b) => b.discountRate - a.discountRate)
+      break
+    case 'priceLow':
+      result.sort((a, b) => a.currentPrice - b.currentPrice)
+      break
+    case 'priceHigh':
+      result.sort((a, b) => b.currentPrice - a.currentPrice)
+      break
+    case 'deadline':
+      result.sort((a, b) => {
+        const aTime = a.timeLeft.includes('시간') ? 0 : 1
+        const bTime = b.timeLeft.includes('시간') ? 0 : 1
+        return aTime - bTime
+      })
+      break
+    default:
+      result.sort((a, b) => b.currentCount / b.targetCount - a.currentCount / a.targetCount)
+  }
+  return result
+})
+
+const loadProducts = () => {
+  // 기본 샘플 상품과 등록된 상품 합치기
+  const registeredProducts = JSON.parse(localStorage.getItem('all_products') || '[]')
+  sampleProductsList.value = [...sampleProducts, ...registeredProducts]
 }
+
+const setSection = (section) => {
+  selectedSection.value = section
+  router.replace({ query: { ...route.query, section } })
+}
+
+const filterByCategory = (categoryId) => {
+  selectedCategory.value = selectedCategory.value === categoryId ? null : categoryId
+}
+
+const search = () => {
+  // 메서드 존재로 입력값과 동기화만 수행
+}
+
+const resetFilters = () => {
+  keyword.value = ''
+  selectedCategory.value = null
+  selectedSection.value = 'popular'
+  sortBy.value = 'popular'
+}
+
+const toggleWishlist = (productId) => {
+  if (wishlist.value.has(productId)) {
+    wishlist.value.delete(productId)
+  } else {
+    wishlist.value.add(productId)
+  }
+  wishlist.value = new Set(wishlist.value)
+}
+
+const goToDetail = (productId) => {
+  router.push({ name: 'product-detail', params: { id: productId } })
+}
+
+const addToCart = (product) => {
+  const cart = JSON.parse(localStorage.getItem('cart') || '[]')
+  cart.push({ productId: product.id, quantity: 1 })
+  localStorage.setItem('cart', JSON.stringify(cart))
+  router.push({ name: 'cart' })
+}
+
+onMounted(() => {
+  loadProducts()
+})
+
+watch(() => route.query.section, (section) => {
+  if (section && sections.some((item) => item.id === section)) {
+    selectedSection.value = section
+  }
+}, { immediate: true })
 </script>
 
 <style scoped>

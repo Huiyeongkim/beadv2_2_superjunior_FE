@@ -61,45 +61,69 @@
   </main>
 </template>
 
-<script>
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { productApi } from '@/api/axios'
 import { getSellerProducts } from '@/data/products'
 
-export default {
-  name: 'SellerProductsList',
-  data() {
-    return {
-      allProducts: []
-    }
-  },
-  mounted() {
-    this.loadProducts()
-  },
-  methods: {
-    loadProducts() {
-      // localStorage에서 등록한 상품 가져오기
-      const registeredProducts = JSON.parse(localStorage.getItem('seller_products') || '[]')
-      
-      // 기본 샘플 상품 중 판매자 이름이 일치하는 것 가져오기
-      const sellerName = JSON.parse(localStorage.getItem('seller_profile') || '{}').name || '테크샵'
-      const sampleProducts = getSellerProducts(sellerName)
-      
-      // 두 목록 합치기
-      this.allProducts = [...registeredProducts, ...sampleProducts]
-    },
-    viewProduct(id) {
-      this.$router.push({ name: 'product-detail', params: { id } })
-    },
-    deleteProduct(id) {
-      if (confirm('정말 이 상품을 삭제하시겠습니까?')) {
-        const registeredProducts = JSON.parse(localStorage.getItem('seller_products') || '[]')
-        const filtered = registeredProducts.filter(p => p.id !== id)
-        localStorage.setItem('seller_products', JSON.stringify(filtered))
-        this.loadProducts()
-        alert('상품이 삭제되었습니다.')
-      }
-    }
+const router = useRouter()
+
+const allProducts = ref([])
+const loading = ref(false)
+
+const loadProducts = async () => {
+  loading.value = true
+  try {
+    // TODO: 실제 API로 상품 목록 조회
+    // const response = await productApi.getProducts()
+    // allProducts.value = response.data.data || []
+    
+    // 임시: localStorage에서 등록한 상품 가져오기
+    const registeredProducts = JSON.parse(localStorage.getItem('seller_products') || '[]')
+    
+    // 기본 샘플 상품 중 판매자 이름이 일치하는 것 가져오기
+    const sellerName = JSON.parse(localStorage.getItem('seller_profile') || '{}').name || '테크샵'
+    const sampleProducts = getSellerProducts(sellerName)
+    
+    // 두 목록 합치기
+    allProducts.value = [...registeredProducts, ...sampleProducts]
+  } catch (error) {
+    console.error('Failed to load products:', error)
+    alert('상품 목록을 불러오는데 실패했습니다.')
+  } finally {
+    loading.value = false
   }
 }
+
+const viewProduct = (id) => {
+  router.push({ name: 'product-detail', params: { id } })
+}
+
+const deleteProduct = async (id) => {
+  if (!confirm('정말 이 상품을 삭제하시겠습니까?')) {
+    return
+  }
+  
+  try {
+    // UUID 형식인지 확인 (백엔드에서 UUID를 사용하므로)
+    // id가 숫자면 UUID로 변환 필요할 수 있음
+    const productId = typeof id === 'string' && id.includes('-') ? id : id.toString()
+    
+    await productApi.deleteProduct(productId)
+    
+    alert('상품이 삭제되었습니다.')
+    loadProducts()
+  } catch (error) {
+    const errorMessage = error.response?.data?.message || '상품 삭제에 실패했습니다. 다시 시도해주세요.'
+    alert(errorMessage)
+    console.error('Product deletion error:', error)
+  }
+}
+
+onMounted(() => {
+  loadProducts()
+})
 </script>
 
 <style scoped>
@@ -348,6 +372,8 @@ export default {
   }
 }
 </style>
+
+
 
 
 

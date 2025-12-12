@@ -174,162 +174,164 @@
   </main>
 </template>
 
-<script>
-export default {
-  name: 'UserProfile',
-  data() {
-    return {
-      profile: {
-        nickname: '에요!',
-        address: '',
-        detailAddress: ''
-      },
-      settlement: {
-        monthlyRevenue: 12500000,
-        pendingAmount: 8500000,
-        totalSettled: 45000000,
-        history: [
-          { id: 1, date: '2025-12-01', amount: 5000000, status: 'completed', statusText: '정산 완료' },
-          { id: 2, date: '2025-11-15', amount: 3200000, status: 'completed', statusText: '정산 완료' },
-          { id: 3, date: '2025-11-01', amount: 7500000, status: 'completed', statusText: '정산 완료' },
-          { id: 4, date: '2025-12-15', amount: 8500000, status: 'pending', statusText: '정산 예정' }
-        ]
-      },
-      sellerStats: {
-        totalSales: 3245,
-        activeProducts: 8,
-        averageRating: 4.9,
-        satisfaction: 98
-      },
-      userInfo: {
-        name: '슈퍼주니어',
-        email: 'user@example.com',
-        phone: '010-1234-5678',
-        joinDate: '2024-01-15'
-      },
-      userStats: {
-        purchasedProducts: 23,
-        reviews: 15,
-        groupPurchases: 18
-      },
-      orderHistory: [
-        {
-          id: 1,
-          orderNumber: 'ORD-2025-001',
-          date: '2025-12-15',
-          status: 'completed',
-          statusText: '배송 완료',
-          totalAmount: 1190000,
-          products: [
-            {
-              id: 1,
-              title: '아이폰 15 Pro Max 256GB',
-              image: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400',
-              option: '네이비 티타늄 / 256GB',
-              quantity: 1,
-              price: 1190000
-            }
-          ]
-        },
-        {
-          id: 2,
-          orderNumber: 'ORD-2025-002',
-          date: '2025-12-10',
-          status: 'shipping',
-          statusText: '배송 중',
-          totalAmount: 198000,
-          products: [
-            {
-              id: 2,
-              title: '나이키 에어맥스 운동화',
-              image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400',
-              option: '270 / 블랙',
-              quantity: 2,
-              price: 198000
-            }
-          ]
-        },
-        {
-          id: 3,
-          orderNumber: 'ORD-2025-003',
-          date: '2025-12-05',
-          status: 'pending',
-          statusText: '주문 대기',
-          totalAmount: 59000,
-          products: [
-            {
-              id: 3,
-              title: '프리미엄 한우 세트 (1kg)',
-              image: 'https://images.unsplash.com/photo-1603048297172-c92544798d5a?w=400',
-              option: '기본 구성',
-              quantity: 1,
-              price: 59000
-            }
-          ]
-        }
-      ]
-    }
-  },
-  computed: {
-    isSeller() {
-      const role = localStorage.getItem('user_role')
-      return role === 'seller'
-    }
-  },
-  mounted() {
-    // 저장된 사용자 정보 불러오기
-    const savedUserData = localStorage.getItem('user_data')
-    if (savedUserData) {
-      try {
-        const userData = JSON.parse(savedUserData)
-        this.userInfo.name = userData.name || this.userInfo.name
-        this.userInfo.email = userData.email || this.userInfo.email
-        this.userInfo.phone = userData.phone || this.userInfo.phone
-        if (userData.createdAt) {
-          this.userInfo.joinDate = new Date(userData.createdAt).toLocaleDateString('ko-KR')
-        }
-      } catch (e) {
-        console.error('Failed to parse user data:', e)
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+
+const profile = ref({
+  nickname: '에요!',
+  address: '',
+  detailAddress: ''
+})
+
+const settlement = ref({
+  monthlyRevenue: 12500000,
+  pendingAmount: 8500000,
+  totalSettled: 45000000,
+  history: [
+    { id: 1, date: '2025-12-01', amount: 5000000, status: 'completed', statusText: '정산 완료' },
+    { id: 2, date: '2025-11-15', amount: 3200000, status: 'completed', statusText: '정산 완료' },
+    { id: 3, date: '2025-11-01', amount: 7500000, status: 'completed', statusText: '정산 완료' },
+    { id: 4, date: '2025-12-15', amount: 8500000, status: 'pending', statusText: '정산 예정' }
+  ]
+})
+
+const sellerStats = ref({
+  totalSales: 3245,
+  activeProducts: 8,
+  averageRating: 4.9,
+  satisfaction: 98
+})
+
+const userInfo = ref({
+  name: '슈퍼주니어',
+  email: 'user@example.com',
+  phone: '010-1234-5678',
+  joinDate: '2024-01-15'
+})
+
+const userStats = ref({
+  purchasedProducts: 23,
+  reviews: 15,
+  groupPurchases: 18
+})
+
+const orderHistory = ref([
+  {
+    id: 1,
+    orderNumber: 'ORD-2025-001',
+    date: '2025-12-15',
+    status: 'completed',
+    statusText: '배송 완료',
+    totalAmount: 1190000,
+    products: [
+      {
+        id: 1,
+        title: '아이폰 15 Pro Max 256GB',
+        image: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400',
+        option: '네이비 티타늄 / 256GB',
+        quantity: 1,
+        price: 1190000
       }
-    }
-    
-    const savedEmail = localStorage.getItem('user_email')
-    if (savedEmail) {
-      this.userInfo.email = savedEmail
-    }
+    ]
   },
-  methods: {
-    save() {
-      // 프로필 정보 저장
-      const profileData = {
-        nickname: this.profile.nickname,
-        address: this.profile.address,
-        detailAddress: this.profile.detailAddress
+  {
+    id: 2,
+    orderNumber: 'ORD-2025-002',
+    date: '2025-12-10',
+    status: 'shipping',
+    statusText: '배송 중',
+    totalAmount: 198000,
+    products: [
+      {
+        id: 2,
+        title: '나이키 에어맥스 운동화',
+        image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400',
+        option: '270 / 블랙',
+        quantity: 2,
+        price: 198000
       }
-      localStorage.setItem('user_profile', JSON.stringify(profileData))
-      alert('저장되었습니다')
-    },
-    searchAddress() {
-      // TODO: 실제 주소 검색 API 연동 (다음 주소 API 등)
-      alert('주소 검색 기능은 다음 주소 API를 연동하여 구현할 예정입니다.')
-      // 목업: 주소 입력
-      const mockAddress = prompt('주소를 입력하세요:')
-      if (mockAddress) {
-        this.profile.address = mockAddress
+    ]
+  },
+  {
+    id: 3,
+    orderNumber: 'ORD-2025-003',
+    date: '2025-12-05',
+    status: 'pending',
+    statusText: '주문 대기',
+    totalAmount: 59000,
+    products: [
+      {
+        id: 3,
+        title: '프리미엄 한우 세트 (1kg)',
+        image: 'https://images.unsplash.com/photo-1603048297172-c92544798d5a?w=400',
+        option: '기본 구성',
+        quantity: 1,
+        price: 59000
       }
-    },
-    viewOrderDetail(orderId) {
-      alert(`주문 상세 정보를 확인합니다. (주문 ID: ${orderId})`)
-      // TODO: 주문 상세 페이지로 이동
-    },
-    // requestRefund(orderId) {
-    //   if (confirm('환불을 신청하시겠습니까?')) {
-    //     alert('환불 신청이 접수되었습니다.')
-    //     // TODO: 환불 신청 API 호출
-    //   }
-    // }
+    ]
+  }
+])
+
+const isSeller = computed(() => {
+  const role = localStorage.getItem('user_role')
+  return role === 'seller'
+})
+
+const save = () => {
+  // 프로필 정보 저장
+  const profileData = {
+    nickname: profile.value.nickname,
+    address: profile.value.address,
+    detailAddress: profile.value.detailAddress
+  }
+  localStorage.setItem('user_profile', JSON.stringify(profileData))
+  alert('저장되었습니다')
+}
+
+const searchAddress = () => {
+  // TODO: 실제 주소 검색 API 연동 (다음 주소 API 등)
+  alert('주소 검색 기능은 다음 주소 API를 연동하여 구현할 예정입니다.')
+  // 목업: 주소 입력
+  const mockAddress = prompt('주소를 입력하세요:')
+  if (mockAddress) {
+    profile.value.address = mockAddress
   }
 }
+
+const viewOrderDetail = (orderId) => {
+  alert(`주문 상세 정보를 확인합니다. (주문 ID: ${orderId})`)
+  // TODO: 주문 상세 페이지로 이동
+}
+
+// const requestRefund = (orderId) => {
+//   if (confirm('환불을 신청하시겠습니까?')) {
+//     alert('환불 신청이 접수되었습니다.')
+//     // TODO: 환불 신청 API 호출
+//   }
+// }
+
+onMounted(() => {
+  // 저장된 사용자 정보 불러오기
+  const savedUserData = localStorage.getItem('user_data')
+  if (savedUserData) {
+    try {
+      const userData = JSON.parse(savedUserData)
+      userInfo.value.name = userData.name || userInfo.value.name
+      userInfo.value.email = userData.email || userInfo.value.email
+      userInfo.value.phone = userData.phone || userInfo.value.phone
+      if (userData.createdAt) {
+        userInfo.value.joinDate = new Date(userData.createdAt).toLocaleDateString('ko-KR')
+      }
+    } catch (e) {
+      console.error('Failed to parse user data:', e)
+    }
+  }
+  
+  const savedEmail = localStorage.getItem('user_email')
+  if (savedEmail) {
+    userInfo.value.email = savedEmail
+  }
+})
 </script>
 
 <style scoped>

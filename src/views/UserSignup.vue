@@ -144,135 +144,140 @@
   </main>
 </template>
 
-<script>
-export default {
-  name: 'UserSignup',
-  data() {
-    return {
-      form: {
-        name: '',
-        nickname: '',
-        email: '',
-        verificationCode: '',
-        password: '',
-        passwordConfirm: '',
-        phone: '',
-        userType: 'user',
-        agreeTerms: false,
-        agreePrivacy: false,
-        agreeMarketing: false
-      },
-      loading: false,
-      emailCodeSent: false,
-      emailVerified: false,
-      emailVerifying: false,
-      verifyingCode: false
-    }
-  },
-  computed: {
-    isEmailValid() {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      return emailRegex.test(this.form.email)
-    },
-    isFormValid() {
-      return (
-        this.form.name &&
-        this.form.nickname &&
-        this.form.email &&
-        this.emailVerified &&
-        this.form.password &&
-        this.form.password === this.form.passwordConfirm &&
-        this.form.phone &&
-        this.form.agreeTerms &&
-        this.form.agreePrivacy
-      )
-    }
-  },
-  methods: {
-    async sendVerificationEmail() {
-      if (!this.isEmailValid) {
-        alert('올바른 이메일 주소를 입력해주세요.')
-        return
-      }
+<script setup>
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { generateUUIDFromEmail } from '@/utils/uuid'
 
-      this.emailVerifying = true
-      try {
-        // TODO: 실제 API 호출로 교체
-        await new Promise(resolve => setTimeout(resolve, 1500))
-        this.emailCodeSent = true
-        alert('인증 코드가 이메일로 전송되었습니다.')
-      } catch (error) {
-        alert('인증 코드 전송에 실패했습니다. 다시 시도해주세요.')
-        console.error('Email verification error:', error)
-      } finally {
-        this.emailVerifying = false
-      }
-    },
-    async verifyEmailCode() {
-      if (!this.form.verificationCode || this.form.verificationCode.length !== 6) {
-        alert('6자리 인증 코드를 입력해주세요.')
-        return
-      }
+const router = useRouter()
 
-      this.verifyingCode = true
-      try {
-        // TODO: 실제 API 호출로 교체
-        // 목업: 인증 코드 검증 (실제로는 서버에서 검증)
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        
-        // 목업: 인증 코드가 '123456'이면 성공
-        if (this.form.verificationCode === '123456') {
-          this.emailVerified = true
-          alert('이메일 인증이 완료되었습니다.')
-        } else {
-          alert('인증 코드가 올바르지 않습니다. (목업: 123456을 입력하세요)')
-        }
-      } catch (error) {
-        alert('인증 코드 확인에 실패했습니다. 다시 시도해주세요.')
-        console.error('Code verification error:', error)
-      } finally {
-        this.verifyingCode = false
-      }
-    },
-    async handleSignup() {
-      if (!this.isFormValid) {
-        if (!this.emailVerified) {
-          alert('이메일 인증을 완료해주세요.')
-        } else {
-          alert('모든 필수 항목을 입력해주세요.')
-        }
-        return
-      }
+const form = ref({
+  name: '',
+  nickname: '',
+  email: '',
+  verificationCode: '',
+  password: '',
+  passwordConfirm: '',
+  phone: '',
+  userType: 'user',
+  agreeTerms: false,
+  agreePrivacy: false,
+  agreeMarketing: false
+})
 
-      this.loading = true
-      try {
-        // TODO: 실제 API 호출로 교체
-        // 목업: 회원가입 성공 시뮬레이션
-        await new Promise(resolve => setTimeout(resolve, 1500))
-        
-        // 사용자 정보 저장 (목업)
-        const userData = {
-          name: this.form.name,
-          nickname: this.form.nickname,
-          email: this.form.email,
-          phone: this.form.phone,
-          userType: this.form.userType,
-          createdAt: new Date().toISOString()
-        }
-        localStorage.setItem('user_data', JSON.stringify(userData))
-        localStorage.setItem('access_token', 'mock_token_' + Date.now())
-        localStorage.setItem('user_role', this.form.userType)
-        localStorage.setItem('user_email', this.form.email)
-        
-        alert('회원가입이 완료되었습니다!')
-        this.$router.push('/')
-      } catch (error) {
-        alert('회원가입에 실패했습니다. 다시 시도해주세요.')
-        console.error('Signup error:', error)
-      } finally {
-        this.loading = false
-      }
+const loading = ref(false)
+const emailCodeSent = ref(false)
+const emailVerified = ref(false)
+const emailVerifying = ref(false)
+const verifyingCode = ref(false)
+
+const isEmailValid = computed(() => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return emailRegex.test(form.value.email)
+})
+
+const isFormValid = computed(() => {
+  return (
+    form.value.name &&
+    form.value.nickname &&
+    form.value.email &&
+    emailVerified.value &&
+    form.value.password &&
+    form.value.password === form.value.passwordConfirm &&
+    form.value.phone &&
+    form.value.agreeTerms &&
+    form.value.agreePrivacy
+  )
+})
+
+const sendVerificationEmail = async () => {
+  if (!isEmailValid.value) {
+    alert('올바른 이메일 주소를 입력해주세요.')
+    return
+  }
+
+  emailVerifying.value = true
+  try {
+    // TODO: 실제 API 호출로 교체
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    emailCodeSent.value = true
+    alert('인증 코드가 이메일로 전송되었습니다.')
+  } catch (error) {
+    alert('인증 코드 전송에 실패했습니다. 다시 시도해주세요.')
+    console.error('Email verification error:', error)
+  } finally {
+    emailVerifying.value = false
+  }
+}
+
+const verifyEmailCode = async () => {
+  if (!form.value.verificationCode || form.value.verificationCode.length !== 6) {
+    alert('6자리 인증 코드를 입력해주세요.')
+    return
+  }
+
+  verifyingCode.value = true
+  try {
+    // TODO: 실제 API 호출로 교체
+    // 목업: 인증 코드 검증 (실제로는 서버에서 검증)
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    // 목업: 인증 코드가 '123456'이면 성공
+    if (form.value.verificationCode === '123456') {
+      emailVerified.value = true
+      alert('이메일 인증이 완료되었습니다.')
+    } else {
+      alert('인증 코드가 올바르지 않습니다. (목업: 123456을 입력하세요)')
     }
+  } catch (error) {
+    alert('인증 코드 확인에 실패했습니다. 다시 시도해주세요.')
+    console.error('Code verification error:', error)
+  } finally {
+    verifyingCode.value = false
+  }
+}
+
+const handleSignup = async () => {
+  if (!isFormValid.value) {
+    if (!emailVerified.value) {
+      alert('이메일 인증을 완료해주세요.')
+    } else {
+      alert('모든 필수 항목을 입력해주세요.')
+    }
+    return
+  }
+
+  loading.value = true
+  try {
+    // TODO: 실제 API 호출로 교체
+    // 목업: 회원가입 성공 시뮬레이션
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    
+    // member_id 생성 (이메일 기반으로 일관된 UUID 생성)
+    const memberId = generateUUIDFromEmail(form.value.email)
+    
+    // 사용자 정보 저장 (목업)
+    const userData = {
+      name: form.value.name,
+      nickname: form.value.nickname,
+      email: form.value.email,
+      phone: form.value.phone,
+      userType: form.value.userType,
+      createdAt: new Date().toISOString()
+    }
+    localStorage.setItem('user_data', JSON.stringify(userData))
+    localStorage.setItem('access_token', 'mock_token_' + Date.now())
+    localStorage.setItem('user_role', form.value.userType)
+    localStorage.setItem('user_email', form.value.email)
+    localStorage.setItem('member_id', memberId)
+    
+    alert('회원가입이 완료되었습니다!')
+    router.push('/')
+  } catch (error) {
+    alert('회원가입에 실패했습니다. 다시 시도해주세요.')
+    console.error('Signup error:', error)
+  } finally {
+    loading.value = false
   }
 }
 </script>

@@ -1,7 +1,7 @@
 <template>
   <main class="page">
     <div class="container">
-      <button class="link" @click="$router.back()">← 목록으로</button>
+      <button class="link" @click="router.back()">← 목록으로</button>
       <article class="post">
         <div class="head">
           <h1 class="title">{{ post.title }}</h1>
@@ -59,72 +59,74 @@
   </main>
 </template>
 
-<script>
-export default {
-  name: 'CommunityPostDetail',
-  props: { id: String },
-  data() {
-    return {
-      post: {
-        id: this.id,
-        title: '예시 게시글 제목',
-        user: '홍길동',
-        time: '어제',
-        category: 'free',
-        content: '본문 내용 (목업) 입니다.<br/>이미지/링크 등이 올 수 있습니다.',
-        attachments: [
-          { name: 'guide.pdf', size: 234567, url: '#' }
-        ]
-      },
-      comments: [
-        { id: 1, user: '아라', time: '방금', text: '좋은 정보 감사합니다!', replies: [
-          { id: 11, user: '나', time: '방금', text: '감사합니다!' }
-        ] },
-        { id: 2, user: '민수', time: '1시간 전', text: '질문 있는데 DM 드려도 될까요?', replies: [] }
-      ],
-      newComment: '',
-      replyOpenId: 0,
-      replyText: ''
-    }
-  },
-  computed: {
-    flatCount() {
-      return this.comments.reduce((acc, c) => acc + 1 + (c.replies ? c.replies.length : 0), 0)
-    }
-  },
-  methods: {
-    categoryLabel(c) {
-      return c === 'free' ? '자유' : c === 'info' ? '정보' : '모집'
-    },
-    formatSize(bytes) {
-      if (!bytes && bytes !== 0) return ''
-      const units = ['B','KB','MB','GB']
-      let i = 0
-      let v = bytes
-      while (v >= 1024 && i < units.length - 1) { v /= 1024; i++ }
-      return `${v.toFixed(1)} ${units[i]}`
-    },
-    addComment() {
-      const text = this.newComment.trim()
-      if (!text) return
-      this.comments.unshift({ id: Date.now(), user: '나', time: '방금', text, replies: [] })
-      this.newComment = ''
-    },
-    toggleReply(id) {
-      this.replyOpenId = this.replyOpenId === id ? 0 : id
-      this.replyText = ''
-    },
-    addReply(parentId) {
-      const text = this.replyText.trim()
-      if (!text) return
-      const parent = this.comments.find(c => c.id === parentId)
-      if (!parent) return
-      parent.replies = parent.replies || []
-      parent.replies.push({ id: Date.now(), user: '나', time: '방금', text })
-      this.replyText = ''
-      this.replyOpenId = 0
-    }
-  }
+<script setup>
+import { ref, computed, defineProps } from 'vue'
+import { useRouter } from 'vue-router'
+
+const props = defineProps({ id: String })
+const router = useRouter()
+
+const post = ref({
+  id: props.id,
+  title: '예시 게시글 제목',
+  user: '홍길동',
+  time: '어제',
+  category: 'free',
+  content: '본문 내용 (목업) 입니다.<br/>이미지/링크 등이 올 수 있습니다.',
+  attachments: [
+    { name: 'guide.pdf', size: 234567, url: '#' }
+  ]
+})
+
+const comments = ref([
+  { id: 1, user: '아라', time: '방금', text: '좋은 정보 감사합니다!', replies: [
+    { id: 11, user: '나', time: '방금', text: '감사합니다!' }
+  ] },
+  { id: 2, user: '민수', time: '1시간 전', text: '질문 있는데 DM 드려도 될까요?', replies: [] }
+])
+
+const newComment = ref('')
+const replyOpenId = ref(0)
+const replyText = ref('')
+
+const flatCount = computed(() => {
+  return comments.value.reduce((acc, c) => acc + 1 + (c.replies ? c.replies.length : 0), 0)
+})
+
+const categoryLabel = (c) => {
+  return c === 'free' ? '자유' : c === 'info' ? '정보' : '모집'
+}
+
+const formatSize = (bytes) => {
+  if (!bytes && bytes !== 0) return ''
+  const units = ['B','KB','MB','GB']
+  let i = 0
+  let v = bytes
+  while (v >= 1024 && i < units.length - 1) { v /= 1024; i++ }
+  return `${v.toFixed(1)} ${units[i]}`
+}
+
+const addComment = () => {
+  const text = newComment.value.trim()
+  if (!text) return
+  comments.value.unshift({ id: Date.now(), user: '나', time: '방금', text, replies: [] })
+  newComment.value = ''
+}
+
+const toggleReply = (id) => {
+  replyOpenId.value = replyOpenId.value === id ? 0 : id
+  replyText.value = ''
+}
+
+const addReply = (parentId) => {
+  const text = replyText.value.trim()
+  if (!text) return
+  const parent = comments.value.find(c => c.id === parentId)
+  if (!parent) return
+  parent.replies = parent.replies || []
+  parent.replies.push({ id: Date.now(), user: '나', time: '방금', text })
+  replyText.value = ''
+  replyOpenId.value = 0
 }
 </script>
 

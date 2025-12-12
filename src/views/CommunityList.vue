@@ -11,7 +11,7 @@
         <button :class="['tab', cat==='recruit' && 'active']" @click="cat='recruit'">모집</button>
       </div>
       <ul class="list">
-        <li v-for="p in postsData" :key="p.id" class="item" @click="$router.push(`/community/${p.id}`)">
+        <li v-for="p in postsData" :key="p.id" class="item" @click="router.push(`/community/${p.id}`)">
           <div class="title">{{ p.title }}</div>
           <div class="muted">{{ p.user }} · {{ p.time }} · 댓글 {{ p.comments }}</div>
         </li>
@@ -27,51 +27,56 @@
   </main>
 </template>
 
-<script>
-export default {
-  name: 'CommunityList',
-  data() {
-    return {
-      cat: 'free',
-      page: 0,
-      pageSize: 10,
-      postsData: [],
-      loading: false,
-      error: '',
-      done: false
-    }
-  },
-  created() { this.fetchPosts(true) },
-  watch: {
-    cat() { this.fetchPosts(true) }
-  },
-  methods: {
-    async fetchPosts(reset = false) {
-      try {
-        if (reset) { this.page = 0; this.postsData = []; this.done = false }
-        this.loading = true; this.error = ''
-        // 목업 API 호출 대체
-        await new Promise(r => setTimeout(r, 400))
-        const start = this.page * this.pageSize
-        const items = Array.from({ length: this.pageSize }, (_, i) => ({
-          id: start + i + 1,
-          title: `${this.cat.toUpperCase()} 글 ${start + i + 1}`,
-          user: ['홍길동','아라','루나'][i % 3],
-          time: '방금',
-          comments: Math.floor(Math.random()*10)
-        }))
-        this.postsData = [...this.postsData, ...items]
-        this.done = items.length < this.pageSize
-        this.page += 1
-      } catch (e) {
-        this.error = '목록을 불러오지 못했습니다'
-      } finally {
-        this.loading = false
-      }
-    },
-    loadMore() { if (!this.loading && !this.done) this.fetchPosts(false) }
+<script setup>
+import { ref, watch, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+const cat = ref('free')
+const page = ref(0)
+const pageSize = 10
+const postsData = ref([])
+const loading = ref(false)
+const error = ref('')
+const done = ref(false)
+
+const fetchPosts = async (reset = false) => {
+  try {
+    if (reset) { page.value = 0; postsData.value = []; done.value = false }
+    loading.value = true
+    error.value = ''
+    // 목업 API 호출 대체
+    await new Promise(r => setTimeout(r, 400))
+    const start = page.value * pageSize
+    const items = Array.from({ length: pageSize }, (_, i) => ({
+      id: start + i + 1,
+      title: `${cat.value.toUpperCase()} 글 ${start + i + 1}`,
+      user: ['홍길동','아라','루나'][i % 3],
+      time: '방금',
+      comments: Math.floor(Math.random()*10)
+    }))
+    postsData.value = [...postsData.value, ...items]
+    done.value = items.length < pageSize
+    page.value += 1
+  } catch (e) {
+    error.value = '목록을 불러오지 못했습니다'
+  } finally {
+    loading.value = false
   }
 }
+
+const loadMore = () => {
+  if (!loading.value && !done.value) fetchPosts(false)
+}
+
+onMounted(() => {
+  fetchPosts(true)
+})
+
+watch(cat, () => {
+  fetchPosts(true)
+})
 </script>
 
 <style scoped>

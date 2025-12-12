@@ -34,6 +34,9 @@
             </label>
             <router-link to="/forgot-password" class="forgot-link">비밀번호 찾기</router-link>
           </div>
+          <div v-if="errorMessage" class="error-message">
+            {{ errorMessage }}
+          </div>
           <button type="submit" class="btn btn-primary" :disabled="loading">
             {{ loading ? '로그인 중...' : '로그인' }}
           </button>
@@ -58,50 +61,77 @@
   </main>
 </template>
 
-<script>
-export default {
-  name: 'UserLogin',
-  data() {
-    return {
-      form: {
-        email: '',
-        password: ''
-      },
-      rememberMe: false,
-      loading: false
+<script setup>
+import { ref } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import api from '@/api/axios'
+
+const router = useRouter()
+const route = useRoute()
+
+const form = ref({
+  email: '',
+  password: ''
+})
+
+const rememberMe = ref(false)
+const loading = ref(false)
+const errorMessage = ref('')
+
+const handleLogin = async () => {
+  loading.value = true
+  errorMessage.value = ''
+  
+  try {
+    // 🔥 Cookie 기반 인증이면 토큰 저장 불필요
+    const response = await api.post('/auth/login', {
+      email: form.value.email,
+      password: form.value.password,
+    })
+    
+    console.log('로그인 성공:', response.data)
+    
+    // Cookie 기반이라면 이 부분 전부 불필요
+    // 백엔드가 자동으로 Cookie에 토큰 설정
+    
+    // 사용자 정보만 필요하면 저장 (선택사항)
+    if (response.data.email) {
+      localStorage.setItem('user_email', response.data.email)
     }
-  },
-  methods: {
-    async handleLogin() {
-      this.loading = true
-      try {
-        // TODO: 실제 API 호출로 교체
-        // 목업: 로그인 성공 시뮬레이션
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        
-        // 토큰 저장 (목업)
-        localStorage.setItem('access_token', 'mock_token_' + Date.now())
-        localStorage.setItem('user_role', this.form.email.includes('seller') ? 'seller' : 'user')
-        localStorage.setItem('user_email', this.form.email)
-        
-        if (this.rememberMe) {
-          localStorage.setItem('remember_me', 'true')
-        }
-        
-        // 이전 페이지로 리다이렉트 또는 홈으로
-        const redirect = this.$route.query.redirect || '/'
-        this.$router.push(redirect)
-      } catch (error) {
-        alert('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.')
-        console.error('Login error:', error)
-      } finally {
-        this.loading = false
+    if (response.data.role) {
+      localStorage.setItem('user_role', response.data.role)
+    }
+    
+    // 이전 페이지로 리다이렉트 또는 홈으로
+    const redirect = route.query.redirect || '/'
+    router.push(redirect)
+    
+  } catch (error) {
+    console.error('Login error:', error)
+    
+    if (error.response) {
+      const status = error.response.status
+      const message = error.response.data?.message || error.response.data?.error
+      
+      if (status === 401) {
+        errorMessage.value = '이메일 또는 비밀번호가 올바르지 않습니다.'
+      } else if (status === 404) {
+        errorMessage.value = '존재하지 않는 사용자입니다.'
+      } else if (message) {
+        errorMessage.value = message
+      } else {
+        errorMessage.value = '로그인에 실패했습니다. 다시 시도해주세요.'
       }
+    } else if (error.request) {
+      errorMessage.value = '서버에 연결할 수 없습니다. 네트워크를 확인해주세요.'
+    } else {
+      errorMessage.value = '로그인 중 오류가 발생했습니다.'
     }
+  } finally {
+    loading.value = false
   }
 }
 </script>
-
 <style scoped>
 .login-page {
   background: #0a0a0a;
@@ -317,6 +347,16 @@ export default {
 
 .signup-link a:hover {
   text-decoration: underline;
+}
+
+.error-message {
+  padding: 12px 16px;
+  background: #2a1a1a;
+  border: 1px solid #ff4444;
+  border-radius: 8px;
+  color: #ff6666;
+  font-size: 14px;
+  text-align: center;
 }
 
 @media (max-width: 480px) {

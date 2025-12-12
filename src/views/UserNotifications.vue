@@ -34,12 +34,10 @@
   </main>
 </template>
 
-<script>
-export default {
-  name: 'UserNotifications',
-  data() {
-    return {
-      notifications: [
+<script setup>
+import { ref } from 'vue'
+
+const notifications = ref([
         {
           id: 1,
           type: 'order',
@@ -80,35 +78,34 @@ export default {
           time: '2일 전',
           read: true
         }
-      ]
-    }
-  },
-  methods: {
-    getIcon(type) {
-      const icons = {
-        order: '📦',
-        delivery: '🚚',
-        review: '⭐',
-        promotion: '🎉',
-        settlement: '💰',
-        system: '🔔'
-      }
-      return icons[type] || '🔔'
-    },
-    markAsRead(id) {
-      const notification = this.notifications.find(n => n.id === id)
-      if (notification) {
-        notification.read = true
-      }
-    },
-    deleteNotification(id) {
-      this.notifications = this.notifications.filter(n => n.id !== id)
-    },
-    clearAll() {
-      if (confirm('모든 알림을 삭제하시겠습니까?')) {
-        this.notifications = []
-      }
-    }
+      ])
+
+const getIcon = (type) => {
+  const icons = {
+    order: '📦',
+    delivery: '🚚',
+    review: '⭐',
+    promotion: '🎉',
+    settlement: '💰',
+    system: '🔔'
+  }
+  return icons[type] || '🔔'
+}
+
+const markAsRead = (id) => {
+  const notification = notifications.value.find(n => n.id === id)
+  if (notification) {
+    notification.read = true
+  }
+}
+
+const deleteNotification = (id) => {
+  notifications.value = notifications.value.filter(n => n.id !== id)
+}
+
+const clearAll = () => {
+  if (confirm('모든 알림을 삭제하시겠습니까?')) {
+    notifications.value = []
   }
 }
 </script>

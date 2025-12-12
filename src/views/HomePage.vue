@@ -238,23 +238,25 @@
   </main>
 </template>
 
-<script>
-export default {
-  name: 'HomePage',
-  data() {
-    return {
-      keyword: '',
-      categories: [
-        { id: 1, name: '전자제품', icon: '📱' },
-        { id: 2, name: '패션', icon: '👕' },
-        { id: 3, name: '식품', icon: '🍎' },
-        { id: 4, name: '뷰티', icon: '💄' },
-        { id: 5, name: '홈/리빙', icon: '🏠' },
-        { id: 6, name: '스포츠', icon: '⚽' },
-        { id: 7, name: '도서', icon: '📚' },
-        { id: 8, name: '기타', icon: '📦' }
-      ],
-      popularProducts: [
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+const keyword = ref('')
+const categories = [
+  { id: 1, name: '전자제품', icon: '📱' },
+  { id: 2, name: '패션', icon: '👕' },
+  { id: 3, name: '식품', icon: '🍎' },
+  { id: 4, name: '뷰티', icon: '💄' },
+  { id: 5, name: '홈/리빙', icon: '🏠' },
+  { id: 6, name: '스포츠', icon: '⚽' },
+  { id: 7, name: '도서', icon: '📚' },
+  { id: 8, name: '기타', icon: '📦' }
+]
+
+const popularProducts = ref([
         {
           id: 1,
           title: '아이폰 15 Pro Max 256GB',
@@ -315,8 +317,9 @@ export default {
           hot: true,
           urgent: false
         }
-      ],
-      endingProducts: [
+      ])
+
+const endingProducts = ref([
         {
           id: 5,
           title: '갤럭시 워치6 클래식',
@@ -345,8 +348,9 @@ export default {
           timeLeft: '5시간 남음',
           urgent: true
         }
-      ],
-      newProducts: [
+      ])
+
+const newProducts = ref([
         {
           id: 7,
           title: '무선 이어폰 프로',
@@ -375,21 +379,19 @@ export default {
           timeLeft: '6일 남음',
           urgent: false
         }
-      ]
-    }
-  },
-  methods: {
-    onSearch() {
-      if (!this.keyword.trim()) return
-      this.$router.push({ path: '/products', query: { q: this.keyword } })
-    },
-    filterByCategory(categoryId) {
-      this.$router.push({ path: '/products', query: { category: categoryId } })
-    },
-    goToProduct(productId) {
-      this.$router.push({ name: 'product-detail', params: { id: productId } })
-    }
-  }
+      ])
+
+const onSearch = () => {
+  if (!keyword.value.trim()) return
+  router.push({ path: '/products', query: { q: keyword.value } })
+}
+
+const filterByCategory = (categoryId) => {
+  router.push({ path: '/products', query: { category: categoryId } })
+}
+
+const goToProduct = (productId) => {
+  router.push({ name: 'product-detail', params: { id: productId } })
 }
 </script>
 

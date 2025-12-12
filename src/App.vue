@@ -6,17 +6,9 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import SiteHeader from './components/SiteHeader.vue'
 import FloatingCart from './components/FloatingCart.vue'
-
-export default {
-  name: 'App',
-  components: {
-    SiteHeader,
-    FloatingCart
-  }
-}
 </script>
 
 <style>

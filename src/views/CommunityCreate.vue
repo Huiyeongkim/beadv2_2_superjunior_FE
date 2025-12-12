@@ -37,33 +37,32 @@
   </main>
 </template>
 
-<script>
-export default {
-  name: 'CommunityCreate',
-  data() {
-    return {
-      form: { category: 'free', title: '', content: '' },
-      files: []
-    }
-  },
-  methods: {
-    onFiles(e) {
-      this.files = Array.from(e.target.files || [])
-    },
-    prettySize(bytes) {
-      const units = ['B','KB','MB','GB']
-      let i = 0
-      let v = bytes
-      while (v >= 1024 && i < units.length - 1) { v /= 1024; i++ }
-      return `${v.toFixed(1)} ${units[i]}`
-    },
-    submit() {
-      if (!this.form.title.trim()) return alert('제목을 입력하세요')
-      if (!this.form.content.trim()) return alert('내용을 입력하세요')
-      alert(`등록되었습니다 (목업) - 파일 ${this.files.length}개`)
-      this.$router.push('/community')
-    }
-  }
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+const form = ref({ category: 'free', title: '', content: '' })
+const files = ref([])
+
+const onFiles = (e) => {
+  files.value = Array.from(e.target.files || [])
+}
+
+const prettySize = (bytes) => {
+  const units = ['B','KB','MB','GB']
+  let i = 0
+  let v = bytes
+  while (v >= 1024 && i < units.length - 1) { v /= 1024; i++ }
+  return `${v.toFixed(1)} ${units[i]}`
+}
+
+const submit = () => {
+  if (!form.value.title.trim()) return alert('제목을 입력하세요')
+  if (!form.value.content.trim()) return alert('내용을 입력하세요')
+  alert(`등록되었습니다 (목업) - 파일 ${files.value.length}개`)
+  router.push('/community')
 }
 </script>
 

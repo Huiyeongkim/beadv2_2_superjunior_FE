@@ -148,85 +148,83 @@
   </main>
 </template>
 
-<script>
-export default {
-  name: 'SellerApplication',
-  data() {
-    return {
-      form: {
-        storeName: '',
-        businessNumber: '',
-        businessType: '',
-        contactPhone: '',
-        contactEmail: '',
-        bankName: '',
-        accountNumber: '',
-        accountHolder: '',
-        description: '',
-        agreeTerms: false,
-        agreePrivacy: false,
-        agreeSettlement: false
-      },
-      loading: false
-    }
-  },
-  computed: {
-    isFormValid() {
-      return (
-        this.form.storeName &&
-        this.form.businessNumber &&
-        this.form.businessType &&
-        this.form.contactPhone &&
-        this.form.contactEmail &&
-        this.form.bankName &&
-        this.form.accountNumber &&
-        this.form.accountHolder &&
-        this.form.description &&
-        this.form.agreeTerms &&
-        this.form.agreePrivacy &&
-        this.form.agreeSettlement
-      )
-    }
-  },
-  mounted() {
-    // 로그인 체크
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      alert('로그인이 필요합니다.')
-      this.$router.push('/login')
-    }
-  },
-  methods: {
-    async handleSubmit() {
-      if (!this.isFormValid) {
-        alert('모든 필수 항목을 입력해주세요.')
-        return
-      }
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 
-      this.loading = true
-      try {
-        // TODO: 실제 API 호출로 교체
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        
-        // 판매자 신청 정보 저장
-        const applicationData = {
-          ...this.form,
-          submittedAt: new Date().toISOString(),
-          status: 'pending'
-        }
-        localStorage.setItem('seller_application', JSON.stringify(applicationData))
-        
-        alert('판매자 신청이 완료되었습니다. 검토 후 연락드리겠습니다.')
-        this.$router.push('/me/profile')
-      } catch (error) {
-        alert('신청에 실패했습니다. 다시 시도해주세요.')
-        console.error('Application error:', error)
-      } finally {
-        this.loading = false
-      }
+const router = useRouter()
+
+const form = ref({
+  storeName: '',
+  businessNumber: '',
+  businessType: '',
+  contactPhone: '',
+  contactEmail: '',
+  bankName: '',
+  accountNumber: '',
+  accountHolder: '',
+  description: '',
+  agreeTerms: false,
+  agreePrivacy: false,
+  agreeSettlement: false
+})
+
+const loading = ref(false)
+
+const isFormValid = computed(() => {
+  return (
+    form.value.storeName &&
+    form.value.businessNumber &&
+    form.value.businessType &&
+    form.value.contactPhone &&
+    form.value.contactEmail &&
+    form.value.bankName &&
+    form.value.accountNumber &&
+    form.value.accountHolder &&
+    form.value.description &&
+    form.value.agreeTerms &&
+    form.value.agreePrivacy &&
+    form.value.agreeSettlement
+  )
+})
+
+const handleSubmit = async () => {
+  if (!isFormValid.value) {
+    alert('모든 필수 항목을 입력해주세요.')
+    return
+  }
+
+  loading.value = true
+  try {
+    // TODO: 실제 API 호출로 교체
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
+    // 판매자 신청 정보 저장
+    const applicationData = {
+      ...form.value,
+      submittedAt: new Date().toISOString(),
+      status: 'pending'
     }
+    localStorage.setItem('seller_application', JSON.stringify(applicationData))
+    
+    alert('판매자 신청이 완료되었습니다. 검토 후 연락드리겠습니다.')
+    router.push('/me/profile')
+  } catch (error) {
+    alert('신청에 실패했습니다. 다시 시도해주세요.')
+    console.error('Application error:', error)
+  } finally {
+    loading.value = false
   }
 }
+
+onMounted(() => {
+  // 로그인 체크
+  const token = localStorage.getItem('access_token')
+  if (!token) {
+    alert('로그인이 필요합니다.')
+    router.push('/login')
+  }
+})
 </script>
 
 <style scoped>

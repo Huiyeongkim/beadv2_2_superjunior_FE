@@ -18,18 +18,13 @@
   </main>
 </template>
 
-<script>
-export default {
-  name: 'UserFollowing',
-  data() {
-    return {
-      users: [
-        { id: 1, name: '홍길동', activity: '커뮤니티 글 작성' },
-        { id: 2, name: '아라', activity: '매칭 참가' }
-      ]
-    }
-  }
-}
+<script setup>
+import { ref } from 'vue'
+
+const users = ref([
+  { id: 1, name: '홍길동', activity: '커뮤니티 글 작성' },
+  { id: 2, name: '아라', activity: '매칭 참가' }
+])
 </script>
 
 <style scoped>

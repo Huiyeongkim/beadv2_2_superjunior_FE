@@ -39,89 +39,91 @@
   </button>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { getProductById } from '@/data/products'
 
-export default {
-  name: 'FloatingCart',
-  data() {
-    return {
-      isOpen: false,
-      items: []
-    }
-  },
-  computed: {
-    cartCount() {
-      return this.items.reduce((sum, item) => sum + item.quantity, 0)
-    },
-    totalQuantity() {
-      return this.items.reduce((sum, item) => sum + item.quantity, 0)
-    },
-    totalPrice() {
-      return this.items.reduce((sum, item) => sum + item.product.currentPrice * item.quantity, 0)
-    }
-  },
-  mounted() {
-    this.loadCartItems()
-    // localStorage 변경 감지
-    window.addEventListener('storage', this.handleStorageChange)
-    // 주기적으로 장바구니 업데이트
-    this.cartUpdateInterval = setInterval(() => {
-      this.loadCartItems()
-    }, 1000)
-  },
-  beforeUnmount() {
-    window.removeEventListener('storage', this.handleStorageChange)
-    if (this.cartUpdateInterval) {
-      clearInterval(this.cartUpdateInterval)
-    }
-  },
-  methods: {
-    loadCartItems() {
-      const stored = JSON.parse(localStorage.getItem('cart') || '[]')
-      this.items = stored
-        .map((item) => {
-          const product = getProductById(item.productId)
-          if (!product) return null
-          return {
-            ...item,
-            product
-          }
-        })
-        .filter(Boolean)
-    },
-    openCart() {
-      this.isOpen = true
-      this.loadCartItems()
-    },
-    closeCart() {
-      this.isOpen = false
-    },
-    changeQuantity(productId, delta) {
-      const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-      const updatedCart = cart.map(item => {
-        if (item.productId === productId) {
-          const quantity = Math.max(1, (item.quantity || 1) + delta)
-          return { ...item, quantity }
-        }
-        return item
-      })
-      localStorage.setItem('cart', JSON.stringify(updatedCart))
-      this.loadCartItems()
-    },
-    removeItem(productId) {
-      const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-      const updatedCart = cart.filter(item => item.productId !== productId)
-      localStorage.setItem('cart', JSON.stringify(updatedCart))
-      this.loadCartItems()
-    },
-    handleStorageChange(e) {
-      if (e.key === 'cart') {
-        this.loadCartItems()
+const isOpen = ref(false)
+const items = ref([])
+let cartUpdateInterval = null
+
+const cartCount = computed(() => {
+  return items.value.reduce((sum, item) => sum + item.quantity, 0)
+})
+
+const totalQuantity = computed(() => {
+  return items.value.reduce((sum, item) => sum + item.quantity, 0)
+})
+
+const totalPrice = computed(() => {
+  return items.value.reduce((sum, item) => sum + item.product.currentPrice * item.quantity, 0)
+})
+
+const loadCartItems = () => {
+  const stored = JSON.parse(localStorage.getItem('cart') || '[]')
+  items.value = stored
+    .map((item) => {
+      const product = getProductById(item.productId)
+      if (!product) return null
+      return {
+        ...item,
+        product
       }
+    })
+    .filter(Boolean)
+}
+
+const openCart = () => {
+  isOpen.value = true
+  loadCartItems()
+}
+
+const closeCart = () => {
+  isOpen.value = false
+}
+
+const changeQuantity = (productId, delta) => {
+  const cart = JSON.parse(localStorage.getItem('cart') || '[]')
+  const updatedCart = cart.map(item => {
+    if (item.productId === productId) {
+      const quantity = Math.max(1, (item.quantity || 1) + delta)
+      return { ...item, quantity }
     }
+    return item
+  })
+  localStorage.setItem('cart', JSON.stringify(updatedCart))
+  loadCartItems()
+}
+
+const removeItem = (productId) => {
+  const cart = JSON.parse(localStorage.getItem('cart') || '[]')
+  const updatedCart = cart.filter(item => item.productId !== productId)
+  localStorage.setItem('cart', JSON.stringify(updatedCart))
+  loadCartItems()
+}
+
+const handleStorageChange = (e) => {
+  if (e.key === 'cart') {
+    loadCartItems()
   }
 }
+
+onMounted(() => {
+  loadCartItems()
+  // localStorage 변경 감지
+  window.addEventListener('storage', handleStorageChange)
+  // 주기적으로 장바구니 업데이트
+  cartUpdateInterval = setInterval(() => {
+    loadCartItems()
+  }, 1000)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('storage', handleStorageChange)
+  if (cartUpdateInterval) {
+    clearInterval(cartUpdateInterval)
+  }
+})
 </script>
 
 <style scoped>
@@ -402,6 +404,9 @@ export default {
   }
 }
 </style>
+
+
+
 
 
 

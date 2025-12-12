@@ -102,19 +102,19 @@
   </main>
 </template>
 
-<script>
-export default {
-  name: 'SellerSettlement',
-  data() {
-    return {
-      selectedPeriod: 'all',
-      selectedStatus: 'all',
-      summary: {
-        monthlyRevenue: 12500000,
-        pendingAmount: 8500000,
-        totalSettled: 45000000
-      },
-      settlements: [
+<script setup>
+import { ref, computed } from 'vue'
+
+const selectedPeriod = ref('all')
+const selectedStatus = ref('all')
+
+const summary = ref({
+  monthlyRevenue: 12500000,
+  pendingAmount: 8500000,
+  totalSettled: 45000000
+})
+
+const settlements = ref([
         {
           id: 1,
           date: '2025-12-01',
@@ -170,66 +170,56 @@ export default {
           status: 'processing',
           statusText: '처리 중'
         }
-      ]
-    }
-  },
-  computed: {
-    filteredSettlements() {
-      let filtered = [...this.settlements]
+      ])
 
-      // 기간 필터
-if (this.selectedPeriod !== 'all') {
-  const now = new Date();
-  filtered = filtered.filter(item => {
-    const itemDate = new Date(item.date);
+const filteredSettlements = computed(() => {
+  let filtered = [...settlements.value]
 
-    switch (this.selectedPeriod) {
+  // 기간 필터
+  if (selectedPeriod.value !== 'all') {
+    const now = new Date()
+    filtered = filtered.filter(item => {
+      const itemDate = new Date(item.date)
 
-      case 'thisMonth': {
-        return (
-          itemDate.getMonth() === now.getMonth() &&
-          itemDate.getFullYear() === now.getFullYear()
-        );
+      switch (selectedPeriod.value) {
+        case 'thisMonth': {
+          return (
+            itemDate.getMonth() === now.getMonth() &&
+            itemDate.getFullYear() === now.getFullYear()
+          )
+        }
+
+        case 'lastMonth': {
+          const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1)
+          return (
+            itemDate.getMonth() === lastMonth.getMonth() &&
+            itemDate.getFullYear() === lastMonth.getFullYear()
+          )
+        }
+
+        case 'last3Months': {
+          const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3)
+          return itemDate >= threeMonthsAgo
+        }
+
+        case 'last6Months': {
+          const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6)
+          return itemDate >= sixMonthsAgo
+        }
+
+        default:
+          return true
       }
-
-      case 'lastMonth': {
-        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1);
-        return (
-          itemDate.getMonth() === lastMonth.getMonth() &&
-          itemDate.getFullYear() === lastMonth.getFullYear()
-        );
-      }
-
-      case 'last3Months': {
-        const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3);
-        return itemDate >= threeMonthsAgo;
-      }
-
-      case 'last6Months': {
-        const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6);
-        return itemDate >= sixMonthsAgo;
-      }
-
-      default:
-        return true;
-    }
-  });
-}
-
-      // 상태 필터
-      if (this.selectedStatus !== 'all') {
-        filtered = filtered.filter(item => item.status === this.selectedStatus)
-      }
-
-      return filtered.sort((a, b) => new Date(b.date) - new Date(a.date))
-    }
-  },
-  methods: {
-    filterSettlements() {
-      // 필터링은 computed property에서 자동으로 처리됨
-    }
+    })
   }
-}
+
+  // 상태 필터
+  if (selectedStatus.value !== 'all') {
+    filtered = filtered.filter(item => item.status === selectedStatus.value)
+  }
+
+  return filtered.sort((a, b) => new Date(b.date) - new Date(a.date))
+})
 </script>
 
 <style scoped>
