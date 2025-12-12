@@ -23,6 +23,7 @@ import GroupPurchaseCreate from '../views/GroupPurchaseCreate.vue'
 import GroupPurchaseList from '../views/GroupPurchaseList.vue'
 import GroupPurchaseDetail from '../views/GroupPurchaseDetail.vue'
 import GroupPurchaseEdit from '../views/GroupPurchaseEdit.vue'
+import PointCharge from '../views/PointCharge.vue'
 
 const routes = [
   { path: '/', name: 'home', component: HomePage },
@@ -47,7 +48,8 @@ const routes = [
   { path: '/group-purchases', name: 'group-purchases', component: GroupPurchaseList },
   { path: '/group-purchases/create', name: 'group-purchase-create', component: GroupPurchaseCreate },
   { path: '/group-purchases/:id', name: 'group-purchase-detail', component: GroupPurchaseDetail, props: true },
-  { path: '/group-purchases/:id/edit', name: 'group-purchase-edit', component: GroupPurchaseEdit, props: true }
+  { path: '/group-purchases/:id/edit', name: 'group-purchase-edit', component: GroupPurchaseEdit, props: true },
+  { path: '/point/charge', name: 'point-charge', component: PointCharge }
 ]
 
 const router = createRouter({
