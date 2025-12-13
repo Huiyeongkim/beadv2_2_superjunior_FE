@@ -49,6 +49,7 @@ export const groupPurchaseApi = {
     getGroupPurchaseById: (purchaseId) => api.get(`/purchases/${purchaseId}`),
     getGroupPurchasesBySeller: (sellerId, page = 0, size = 10) =>
         api.get(`/purchases/seller/${sellerId}`, { params: { page, size } }),
+    updateGroupPurchase: (purchaseId, data) => api.patch(`/purchases/${purchaseId}`, data),
 };
 
 export default api;

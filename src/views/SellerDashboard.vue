@@ -161,6 +161,18 @@ const badgesInput = ref('')
 // 현재는 localStorage에서 판매자 ID를 가져오거나 임시 ID 사용
 const sellerId = ref(localStorage.getItem('seller_id') || 'temp-seller-id')
 
+// 공지사항 및 Q&A 샘플 데이터
+const notices = ref([
+  { id: 1, type: '공지', title: '설날 연휴 배송 안내', date: '2024-01-20' },
+  { id: 2, type: '이벤트', title: '신규 회원 포인트 적립 이벤트', date: '2024-01-15' },
+  { id: 3, type: '안내', title: '배송비 정책 변경 안내', date: '2024-01-10' }
+])
+
+const qna = ref([
+  { id: 1, question: '배송은 언제 시작되나요?', answer: '결제 완료 후 1~2일 내 발송됩니다.', status: '답변 완료' },
+  { id: 2, question: '교환/환불은 어떻게 하나요?', answer: '마이페이지에서 신청 가능합니다.', status: '답변 완료' }
+])
+
 const loadSellerInfo = () => {
   const savedSeller = JSON.parse(localStorage.getItem('seller_profile') || 'null')
   if (savedSeller) {
