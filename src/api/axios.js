@@ -38,8 +38,14 @@ api.interceptors.response.use(
 export const productApi = {
     createProduct: (data) => api.post("/products", data),
     getProductById: (productId) => api.get(`/products/${productId}`),
+    getProducts: () => api.get("/products"), // 상품 목록 조회 (백엔드 API 필요)
     updateProduct: (productId, data) => api.patch(`/products/${productId}`, data),
     deleteProduct: (productId) => api.delete(`/products/${productId}`),
+};
+
+// 공동구매 관련 API
+export const groupPurchaseApi = {
+    createGroupPurchase: (data) => api.post("/purchases", data),
 };
 
 export default api;
