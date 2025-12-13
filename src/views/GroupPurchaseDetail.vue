@@ -33,10 +33,17 @@
             />
           </div>
           <h1>{{ groupPurchase.title }}</h1>
-          <div v-if="groupPurchase.originalUrl" class="product-link">
-            <a :href="groupPurchase.originalUrl" target="_blank" rel="noopener noreferrer">
-              상품 원본 페이지 보기 →
-            </a>
+          <div class="product-links">
+            <div v-if="groupPurchase.productId" class="product-link">
+              <button class="btn btn-product-detail" @click="goToProduct">
+                상품 정보 보기 →
+              </button>
+            </div>
+            <div v-if="groupPurchase.originalUrl" class="product-link">
+              <a :href="groupPurchase.originalUrl" target="_blank" rel="noopener noreferrer">
+                상품 원본 페이지 보기 →
+              </a>
+            </div>
           </div>
           <div class="description">
             <h3>설명</h3>
@@ -289,6 +296,12 @@ const goToEdit = () => {
   router.push({ name: 'group-purchase-edit', params: { id: props.id } })
 }
 
+const goToProduct = () => {
+  if (groupPurchase.value?.productId) {
+    router.push({ name: 'product-detail', params: { id: groupPurchase.value.productId } })
+  }
+}
+
 const handleParticipate = async () => {
   if (!canParticipate.value) {
     alert('참여 조건을 확인해주세요.')
@@ -440,8 +453,15 @@ watch(() => props.id, () => {
   margin-bottom: 16px;
 }
 
-.product-link {
+.product-links {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   margin-bottom: 24px;
+}
+
+.product-link {
+  display: flex;
 }
 
 .product-link a {
@@ -456,6 +476,25 @@ watch(() => props.id, () => {
 .product-link a:hover {
   color: #69db7c;
   text-decoration: underline;
+}
+
+.btn-product-detail {
+  background: transparent;
+  color: #51cf66;
+  border: 2px solid #51cf66;
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-product-detail:hover {
+  background: #51cf66;
+  color: #0a0a0a;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(81, 207, 102, 0.3);
 }
 
 .description {
