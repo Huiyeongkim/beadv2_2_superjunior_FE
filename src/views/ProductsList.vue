@@ -252,6 +252,19 @@ const filterByCategory = (value) => {
   loadProducts()
 }
 
+// 카테고리별 기본 이미지
+const categoryImages = {
+  'HOME': 'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=400',
+  'FOOD': 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400',
+  'HEALTH': 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400',
+  'BEAUTY': 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=400',
+  'FASHION': 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=400',
+  'ELECTRONICS': 'https://images.unsplash.com/photo-1468495244123-6c6c332eeece?w=400',
+  'KIDS': 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=400',
+  'HOBBY': 'https://images.unsplash.com/photo-1452860606245-08befc0ff44b?w=400',
+  'PET': 'https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=400'
+}
+
 /* ======================
  * ✅ 정렬 매핑 (서버 sort 파라미터)
  * ====================== */
@@ -285,28 +298,42 @@ const getTimeLeft = (endDate) => {
 /* ======================
  * TRANSFORM
  * ====================== */
-const transform = (doc) => {
-  const p = doc.productDocumentEmbedded || {}
-  const badges = []
 
-  if (doc.discountRate >= 30) badges.push(`${doc.discountRate}% 할인`)
-  if (doc.status === 'SCHEDULED') badges.push('오픈예정')
-  if (doc.status === 'SUCCESS') badges.push('완료')
-  if (doc.status === 'FAILED') badges.push('실패')
+ const isUrgent = (endDate) => {
+   if (!endDate) return false
+   return (new Date(endDate) - new Date()) / (1000 * 60 * 60) <= 24
+ }
+
+//형식 맞추기
+const mapToProductCard = (gp) => {
+  // 카테고리 변환 (백엔드 enum -> 한글)
+  const categoryKorean = allCategories[gp.category] || gp.category || '기타'
+
+  // 이미지 우선순위: 백엔드 이미지 > 카테고리별 기본 이미지
+  let image = gp.imageUrl || gp.image || gp.thumbnailUrl || gp.originalUrl
+  if (!image || image.trim() === '') {
+    image = categoryImages[gp.category]
+  }
+
+  const originalPrice = gp.price || gp.originalPrice || 0
+  const discountedPrice = gp.discountedPrice || gp.discountPrice || originalPrice
+  const discountRate = originalPrice > 0 ? Math.round(((originalPrice - discountedPrice) / originalPrice) * 100) : 0
 
   return {
-    id: doc.groupPurchaseId,
-    title: doc.title,
-    subtitle: doc.description || '',
-    category: p.category || '',
-    image: p.originalUrl || '',
-    originalPrice: p.price || 0,
-    currentPrice: doc.discountedPrice || 0,
-    discountRate: doc.discountRate || 0,
-    currentCount: doc.currentQuantity || 0,
-    targetCount: doc.maxQuantity || 1,
-    timeLeft: getTimeLeft(doc.endDate),
-    badges
+    id: gp.groupPurchaseId || gp.id,
+    title: gp.title,
+    subtitle: gp.description,
+    category: categoryKorean,
+    seller: gp.sellerName || '판매자',
+    image: image,
+    originalPrice: originalPrice,
+    currentPrice: discountedPrice,
+    discountRate: discountRate,
+    currentCount: gp.currentQuantity || 0,
+    targetCount: gp.maxQuantity || 1,
+    timeLeft: getTimeLeft(gp.endDate),
+    hot: (gp.currentQuantity || 0) >= (gp.minQuantity || 0),
+    urgent: isUrgent(gp.endDate)
   }
 }
 
@@ -325,7 +352,7 @@ const loadProducts = async () => {
     })
 
     const content = res.data?.data?.content ?? []
-    products.value = content.map(transform)
+    products.value = content.map(mapToProductCard)
   } catch (e) {
     console.error('공동구매 검색 실패', e)
     products.value = []
@@ -350,6 +377,9 @@ const goToDetail = (id) => {
 
 /* ✅ 정렬 바뀌면 즉시 로드 */
 watch(sortBy, () => loadProducts())
+watch(keyword, () => {
+  loadProducts()
+})
 
 /* ======================
  * INIT
