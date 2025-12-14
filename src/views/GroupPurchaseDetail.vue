@@ -39,11 +39,6 @@
                 상품 정보 보기 →
               </button>
             </div>
-            <div v-if="groupPurchase.originalUrl" class="product-link">
-              <a :href="groupPurchase.originalUrl" target="_blank" rel="noopener noreferrer">
-                상품 원본 페이지 보기 →
-              </a>
-            </div>
           </div>
           <div class="description">
             <h3>설명</h3>

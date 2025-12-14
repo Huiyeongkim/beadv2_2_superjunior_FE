@@ -338,23 +338,33 @@ watch(
 }
 
 .info {
-  background: #1a1a1a;
+  background: linear-gradient(135deg, #1a1a1a 0%, #151515 100%);
   border: 1px solid #2a2a2a;
   border-radius: 24px;
-  padding: 28px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  padding: 32px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
   display: flex;
   flex-direction: column;
+  transition: all 0.3s ease;
+}
+
+.info:hover {
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.7);
+  border-color: #3a3a3a;
 }
 
 .info-top {
   text-align: left;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #2a2a2a;
+  margin-bottom: 24px;
 }
 
 .stock-inline {
   font-weight: 400;
-  color: #cccccc;
-  margin-left: 6px;
+  color: #999;
+  margin-left: 8px;
+  font-size: 16px;
 }
 
 .info-bottom {
@@ -363,16 +373,27 @@ watch(
 
 .product-title {
   color: #ffffff;
-  font-size: 32px;   /* 제목 크게 */
+  font-size: 32px;
   font-weight: 700;
-  margin: 8px 0 10px;
+  margin: 16px 0 20px;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
 }
 
 .price-stock {
   margin: 0;
-  font-size: 18px;   /* 가격/재고 같은 크기 */
-  font-weight: 600;
+  font-size: 26px;
+  font-weight: 700;
   color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  background: linear-gradient(135deg, #ffffff 0%, #d0d0d0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-align: right;
 }
 
 .info h1 {
@@ -383,10 +404,16 @@ watch(
 }
 
 .category {
-  color: #ffffff;
-  font-weight: 600;
-  font-size: 13px;
-  letter-spacing: 0.08em;
+  display: inline-block;
+  color: #0a0a0a;
+  background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  border-radius: 20px;
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.2);
 }
 
 .subtitle {
@@ -410,49 +437,70 @@ watch(
 .specs {
   list-style: none;
   padding: 0;
-  margin: 16px 0;
+  margin: 20px 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
 }
 
 .specs li {
   color: #e0e0e0;
+  font-size: 15px;
+  padding: 10px 14px;
+  background: #0f0f0f;
+  border-radius: 10px;
+  border-left: 3px solid #ffffff;
+  transition: all 0.2s ease;
+}
+
+.specs li:hover {
+  background: #1a1a1a;
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .actions {
   display: flex;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-top: 24px;
 }
 
 .btn {
   flex: 1;
   border: none;
-  border-radius: 12px;
-  padding: 14px;
-  font-weight: 600;
+  border-radius: 14px;
+  padding: 16px 24px;
+  font-weight: 700;
+  font-size: 15px;
   cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .btn-outline {
   background: transparent;
-  border: 1px solid #3a3a3a;
+  border: 2px solid #3a3a3a;
   color: #ffffff;
 }
 
 .btn-outline:hover {
-  background: #2a2a2a;
-  border-color: #4a4a4a;
+  background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+  border-color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.1);
 }
 
 .btn-primary {
-  background: #ffffff;
+  background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
   color: #0a0a0a;
+  border: 2px solid transparent;
 }
 
 .btn-primary:hover {
-  background: #f0f0f0;
+  background: linear-gradient(135deg, #e0e0e0 0%, #ffffff 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.3);
 }
 
 .shipping {
@@ -602,6 +650,23 @@ details p {
 @media (max-width: 600px) {
   .actions {
     flex-direction: column;
+  }
+
+  .product-title {
+    font-size: 26px;
+  }
+
+  .price-stock {
+    font-size: 20px;
+  }
+
+  .info {
+    padding: 24px;
+  }
+
+  .category {
+    font-size: 10px;
+    padding: 6px 12px;
   }
 }
 </style>
