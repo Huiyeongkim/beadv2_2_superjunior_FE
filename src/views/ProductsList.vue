@@ -17,7 +17,7 @@
     <section class="filters">
       <div class="container">
 
-        <!-- STATUS -->
+        <!-- STATUS + SEARCH -->
         <div class="filter-row">
           <div class="chips">
             <button
@@ -44,7 +44,7 @@
           </div>
         </div>
 
-        <!-- CATEGORY (더보기) -->
+        <!-- CATEGORY + SORT -->
         <div class="filter-row secondary">
           <div class="category-wrapper">
             <!-- 기본 카테고리 (전체 + 3개) -->
@@ -82,6 +82,20 @@
                 <span>{{ cat.label }}</span>
               </button>
             </div>
+          </div>
+
+          <!-- ✅ 정렬 드롭다운 -->
+          <div class="sort">
+            <label>
+              정렬
+              <select v-model="sortBy">
+                <option value="popular">인기순</option>
+                <option value="discountRate">할인율 높은순</option>
+                <option value="priceLow">가격 낮은순</option>
+                <option value="priceHigh">가격 높은순</option>
+                <option value="deadline">마감 임박순</option>
+              </select>
+            </label>
           </div>
         </div>
       </div>
@@ -166,7 +180,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { groupPurchaseApi } from '@/api/axios'
 
@@ -181,6 +195,9 @@ const loading = ref(false)
 const keyword = ref('')
 const selectedStatus = ref('OPEN')
 const selectedCategory = ref('')
+
+/* ✅ 정렬 상태 추가 */
+const sortBy = ref('popular')
 
 /* ======================
  * 위시리스트
@@ -206,7 +223,6 @@ const primarySections = [
 /* ======================
  * CATEGORY (더보기)
  * ====================== */
-
 const allCategories = [
   { value: '', label: '전체', icon: '✨' },
   { value: 'HOME', label: '생활·주방', icon: '🏠' },
@@ -227,23 +243,32 @@ const toggleMoreCategories = () => {
 }
 
 // 기본: 전체 + 3개
-const primaryCategories = computed(() => {
-  return allCategories.slice(0, 4)
-})
-
+const primaryCategories = computed(() => allCategories.slice(0, 4))
 // 더보기 영역
-const secondaryCategories = computed(() => {
-  return allCategories.slice(4)
-})
+const secondaryCategories = computed(() => allCategories.slice(4))
 
 const filterByCategory = (value) => {
-  // 전체 다시 선택
-  if (value === '') {
-    selectedCategory.value = ''
-  } else {
-    selectedCategory.value = value
-  }
+  selectedCategory.value = value
   loadProducts()
+}
+
+/* ======================
+ * ✅ 정렬 매핑 (서버 sort 파라미터)
+ * ====================== */
+const toApiSort = (key) => {
+  switch (key) {
+    case 'discountRate':
+      return 'discountRate,desc'
+    case 'priceLow':
+      return 'discountedPrice,asc'
+    case 'priceHigh':
+      return 'discountedPrice,desc'
+    case 'deadline':
+      return 'endDate,asc'
+    default:
+      // 인기순(참여자수 기준)
+      return 'currentQuantity,desc'
+  }
 }
 
 /* ======================
@@ -295,6 +320,7 @@ const loadProducts = async () => {
       keyword: keyword.value,
       status: selectedStatus.value,
       category: selectedCategory.value,
+      sort: toApiSort(sortBy.value), // ✅ 정렬 적용
       size: 100
     })
 
@@ -322,13 +348,14 @@ const goToDetail = (id) => {
   router.push({ name: 'group-purchase-detail', params: { id } })
 }
 
+/* ✅ 정렬 바뀌면 즉시 로드 */
+watch(sortBy, () => loadProducts())
+
 /* ======================
  * INIT
  * ====================== */
 onMounted(loadProducts)
 </script>
-
-
 
 <style scoped>
 .products-page {
@@ -364,32 +391,6 @@ onMounted(loadProducts)
   color: #999;
 }
 
-.stats {
-  display: flex;
-  gap: 32px;
-  margin-top: 24px;
-}
-
-.stat {
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  padding: 16px 20px;
-  border-radius: 12px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-  flex: 1;
-}
-
-.stat strong {
-  display: block;
-  font-size: 20px;
-  color: #ffffff;
-}
-
-.stat span {
-  color: #999;
-  font-size: 14px;
-}
-
 .filters {
   background: #0a0a0a;
   border-top: 1px solid #2a2a2a;
@@ -407,7 +408,8 @@ onMounted(loadProducts)
 
 .filter-row.secondary {
   margin-top: 12px;
-  justify-content: flex-start;
+  justify-content: space-between;
+  align-items: flex-start;
 }
 
 .chips {
@@ -432,16 +434,6 @@ onMounted(loadProducts)
   border-color: #ffffff;
   color: #0a0a0a;
   background: #ffffff;
-}
-
-.filter-row.secondary {
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-/* 더보기 펼쳤을 때 줄바꿈 허용 */
-.chips.expanded {
-  flex-wrap: wrap;
 }
 
 .filter-actions {
@@ -513,6 +505,31 @@ onMounted(loadProducts)
   opacity: 0.8;
 }
 
+/* ✅ 정렬 스타일 */
+.sort {
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.sort select {
+  margin-left: 8px;
+  padding: 10px 14px;
+  background: #0f0f0f;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  color: #ffffff;
+  cursor: pointer;
+  min-width: 160px;
+}
+
+.sort select:focus {
+  outline: none;
+  border-color: #ffffff;
+  background: #151515;
+}
 
 .product-grid-section {
   padding: 40px 0 80px;
@@ -712,25 +729,21 @@ onMounted(loadProducts)
 }
 
 @media (max-width: 768px) {
-  .stats {
-    flex-direction: column;
-  }
-
   .filter-row {
     flex-direction: column;
   }
 
   .filter-row.secondary {
-    margin-top: 8px;
+    align-items: stretch;
   }
 
-  .chips {
+  .sort {
     width: 100%;
   }
 
-  .filter-actions {
+  .sort select {
     width: 100%;
-    flex-direction: column;
+    margin-left: 0;
   }
 
   .search {
@@ -742,19 +755,9 @@ onMounted(loadProducts)
     min-width: auto;
   }
 
-  .category-select {
-    width: 100%;
-  }
-
-  .category-select select {
-    width: 100%;
-  }
-
   .price-row {
     flex-direction: column;
     align-items: flex-start;
   }
 }
 </style>
-
-
