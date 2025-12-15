@@ -60,6 +60,11 @@ export const authAPI = {
         const response = await api.put(`/members/address/${addressId}`, addressData)
         return response.data;
     },
+    // 주소 삭제
+    deleteAddress: async(addressId) => {
+            const response = await api.delete(`/members/address/${addressId}`, addressId)
+            return response.data;
+        },
     // 판매자 신청
     sellerRegister: async(sellerData) => {
         const response = await api.post(`/members/seller`, {
@@ -73,6 +78,10 @@ export const authAPI = {
     // 주문 내역 조회
     getOrders: async() => {
         const response = await api.get(`/orders/consumer`)
+        return response.data;
+    },
+    getOrderDetail: async(orderId) =>{
+        const response = await api.get(`/orders/${orderId}`)
         return response.data;
     },
     // 판매자 정보 조회
