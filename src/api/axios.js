@@ -122,5 +122,28 @@ export const groupPurchaseApi = {
   },
 };
 
+// 알림 관련 API
+export const notificationApi = {
+    // 알림 목록 조회 (페이지네이션)
+    getNotifications: (page = 0, size = 20, sort = 'createdAt,desc') => {
+        const params = { page, size, sort }
+        return api.get("/notifications", { params })
+    },
+    // 읽지 않은 알림 목록 조회 (페이지네이션)
+    getUnreadNotifications: (page = 0, size = 20, sort = 'createdAt,desc') => {
+        const params = { page, size, sort }
+        return api.get("/notifications/unread", { params })
+    },
+    // 읽지 않은 알림 개수 조회
+    getUnreadCount: () => {
+        return api.get("/notifications/unread", { params: { page: 0, size: 1 } })
+            .then(response => response.data.data.totalElements || 0)
+    },
+    // 알림 읽음 처리
+    markAsRead: (notificationId) => api.patch(`/notifications/${notificationId}/read`),
+    // 알림 전체 읽음 처리
+    markAllAsRead: () => api.patch("/notifications/read"),
+};
+
 export default api;
 
