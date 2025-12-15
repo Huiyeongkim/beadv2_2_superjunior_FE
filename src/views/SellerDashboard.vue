@@ -29,11 +29,11 @@
                 <span>평점</span>
               </div>
               <div class="stat">
-                <strong>{{ seller.followers.toLocaleString() }}</strong>
+                <strong>{{ seller.followers.toLocaleString() ?? '0' }}</strong>
                 <span>팔로워</span>
               </div>
               <div class="stat">
-                <strong>{{ seller.totalSales.toLocaleString() }}</strong>
+                <strong>{{ seller.totalSales.toLocaleString() ?? '0' }}</strong>
                 <span>누적 판매</span>
               </div>
               <div class="stat">
@@ -89,7 +89,7 @@
                   </div>
                   <div class="settlement-amount-group">
                     <span class="settlement-amount-label">정산 금액</span>
-                    <span class="settlement-amount">₩{{ (item.amount || 0).toLocaleString() }}</span>
+                    <span class="settlement-amount">₩{{ (item.amount || 0).toLocaleString() ?? '0' }}</span>
                   </div>
                 </div>
                 <div class="settlement-status-wrapper">
@@ -112,7 +112,7 @@
             <div class="stat-box">
               <div class="stat-icon">📦</div>
               <span class="stat-label">총 판매 건수</span>
-              <span class="stat-number">{{ sellerStats.totalSales.toLocaleString() }}</span>
+              <span class="stat-number">{{ sellerStats.totalSales.toLocaleString() ?? '0' }}</span>
             </div>
             <div class="stat-box">
               <div class="stat-icon">🛒</div>
@@ -135,19 +135,57 @@
         <!-- 내 상품 목록 -->
         <article class="panel wide">
           <div class="panel-header">
-            <h2>내 상품 목록</h2>
+            <div class="header-left">
+              <h2>내 상품 목록</h2>
+
+              <div class="search-bar">
+                <input
+                  v-model="searchKeyword"
+                  placeholder="상품명을 검색하세요"
+                  @keyup.enter="searchProducts"
+                />
+
+                <select v-model="searchCategory">
+                  <option value="">전체 카테고리</option>
+                  <option value="HOME">생활 & 주방</option>
+                  <option value="FOOD">식품 & 간식</option>
+                  <option value="HEALTH">건강 & 헬스</option>
+                  <option value="BEAUTY">뷰티</option>
+                  <option value="FASHION">패션 & 의류</option>
+                  <option value="ELECTRONICS">전자 & 디지털</option>
+                  <option value="KIDS">유아 & 어린이</option>
+                  <option value="HOBBY">취미</option>
+                  <option value="PET">반려동물</option>
+                </select>
+
+                <button class="btn btn-primary" @click="searchProducts">
+                  검색
+                </button>
+              </div>
+            </div>
+
             <div class="header-actions">
-              <router-link to="/seller/register/product-register" class="btn-new-product">+ 상품 등록</router-link>
-              <router-link to="/seller/products" class="link">전체 보기 →</router-link>
+              <router-link
+                to="/seller/register/product-register"
+                class="btn-new-product"
+              >
+                + 상품 등록
+              </router-link>
+              <router-link to="/seller/products" class="link">
+                전체 보기 →
+              </router-link>
             </div>
           </div>
+
+          <!-- ✅ 상품 카드 grid (카드만 들어감) -->
           <div class="product-list">
-            <div v-if="loading" class="loading-state">
+            <div v-if="loadingProducts" class="loading-state">
               <p>상품 목록을 불러오는 중...</p>
             </div>
+
             <template v-else>
               <div
-                v-for="product in sellerProducts.slice(0, 4)"
+                v-for="product in sellerProducts"
                 :key="product.id"
                 class="product-card"
                 @click="goToProduct(product.id)"
@@ -156,25 +194,51 @@
                 <div class="product-info">
                   <p class="category">{{ product.category }}</p>
                   <h3>{{ product.title }}</h3>
-                  <p class="price">₩{{ product.currentPrice.toLocaleString() }}</p>
-                  <div class="progress-info">
-                    <span class="progress-text">재고: {{ product.stock }}개</span>
-                    <div class="progress-bar">
-                      <div
-                        class="progress-fill"
-                        :style="{ width: `${Math.min((product.currentCount / product.targetCount) * 100, 100)}%` }"
-                      ></div>
-                    </div>
-                  </div>
+                  <p class="price">
+                    ₩{{ Number(product.currentPrice || 0).toLocaleString() }}
+                  </p>
+                  <span class="progress-text">재고: {{ product.stock }}개</span>
                 </div>
               </div>
+
               <div v-if="sellerProducts.length === 0" class="empty-state">
                 <p>등록된 상품이 없습니다</p>
-                <router-link to="/seller/register/product-register" class="btn btn-primary">상품 등록하기</router-link>
+                <router-link
+                  to="/seller/register/product-register"
+                  class="btn btn-primary"
+                >
+                  상품 등록하기
+                </router-link>
               </div>
             </template>
           </div>
+
+          <!-- ✅ pagination은 grid 밖 -->
+          <div v-if="totalPages > 1" class="pagination-wrapper">
+            <div class="pagination">
+              <button
+                class="page-btn"
+                :disabled="page === 0"
+                @click="goToPage(page - 1)"
+              >
+                이전
+              </button>
+
+              <span class="page-info">
+                {{ page + 1 }} / {{ totalPages }}
+              </span>
+
+              <button
+                class="page-btn"
+                :disabled="page + 1 >= totalPages"
+                @click="goToPage(page + 1)"
+              >
+                다음
+              </button>
+            </div>
+          </div>
         </article>
+
 
         <!-- 공동 구매 목록 -->
         <article class="panel wide">
@@ -211,8 +275,8 @@
                   </div>
                 </div>
                 <div class="item-price">
-                  <span class="original-price">₩{{ gp.originalPrice.toLocaleString() }}</span>
-                  <span class="current-price">₩{{ gp.discountPrice.toLocaleString() }}</span>
+                  <span class="original-price">₩{{ Number(gp.originalPrice || 0).toLocaleString() }}</span>
+                  <span class="current-price">₩{{ gp.discountPrice.toLocaleString() ?? '0'}}</span>
                 </div>
               </div>
               <div v-if="sellerGroupPurchases.length === 0" class="empty-state">
@@ -250,7 +314,8 @@
                     <p class="product-option">{{ product.option }}</p>
                     <div class="product-meta">
                       <span>수량: {{ product.quantity }}개</span>
-                      <span class="product-price">₩{{ product.price.toLocaleString() }}</span>
+                      <span class="product-price">₩{{ Number(product.price || 0).toLocaleString() }}
+</span>
                     </div>
                   </div>
                 </div>
@@ -260,7 +325,7 @@
                 <p class="order-price">단가: ₩{{ (order.price||0).toLocaleString() || '-' }}</p>
               </div>
               <div class="order-footer">
-                <span class="order-total">총 결제금액: ₩{{ (order.totalAmount||0).toLocaleString() }}</span>
+                <span class="order-total">총 결제금액: ₩{{ (order.totalAmount||0).toLocaleString() ?? '0' }}</span>
                 <div class="order-actions">
                   <button class="btn btn-outline btn-sm" @click="viewOrderDetail(order.orderId)">상세보기</button>
                 </div>
@@ -409,11 +474,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { sellerProfile, sellerNotices, sellerQna } from '@/data/products'
 import { authAPI } from '@/api/auth'
-import { productApi, groupPurchaseApi } from '@/api/axios'
+import { groupPurchaseApi } from '@/api/axios'
 
 const router = useRouter()
 
@@ -423,7 +488,6 @@ const sellerGroupPurchases = ref([])
 const groupPurchaseList = ref([])
 const orderList = ref([])
 
-const loading = ref(false)
 const loadingProducts = ref(false)
 const loadingGroupPurchases = ref(false)
 const loadingOrders = ref(false)
@@ -851,29 +915,59 @@ const loadOrders = async () => {
   }
 }
 
-// 내 상품 목록 불러오기
-const loadProducts = async () => {
+//product
+const searchKeyword = ref('')
+const searchCategory = ref('')
+const page = ref(0)
+const size = ref(4)
+const totalPages = ref(0)
+const totalElements = ref(0)
+
+//상품 검색
+const searchProducts = async () => {
   loadingProducts.value = true
   try {
-    const response = await authAPI.getMyProducts()
-    console.log('내 상품 목록:', response)
-    
-    const productsData = response.data || response
-    
-    if (Array.isArray(productsData)) {
-      sellerProducts.value = productsData
-    } else if (productsData && Array.isArray(productsData.content)) {
-      // Pageable 객체인 경우
-      sellerProducts.value = productsData.content
-    } else {
-      sellerProducts.value = []
-    }
-  } catch (error) {
-    console.error('상품 목록 조회 실패:', error)
+    const result = await authAPI.searchProducts({
+      keyword: searchKeyword.value,
+      category: searchCategory.value,
+      page: page.value,
+      size: size.value
+    })
+
+    sellerProducts.value = result.content.map(transformProduct)
+    totalPages.value = result.totalPages
+    totalElements.value = result.totalElements
+  } catch (e) {
+    console.error('상품 검색 실패', e)
     sellerProducts.value = []
+    totalPages.value = 0
+    totalElements.value = 0
   } finally {
     loadingProducts.value = false
   }
+}
+
+// 카테고리 즉시 반응
+watch(searchCategory, () => {
+  page.value = 0
+  searchProducts()
+})
+
+// 검색어 debounce
+let timer = null
+watch(searchKeyword, () => {
+  clearTimeout(timer)
+  timer = setTimeout(() => {
+    page.value = 0
+    searchProducts()
+  }, 300)
+})
+
+// 페이징
+const goToPage = (newPage) => {
+  if (newPage < 0 || newPage >= totalPages.value) return
+  page.value = newPage
+  searchProducts()
 }
 
 // 공동 구매 목록 불러오기
@@ -952,55 +1046,59 @@ const transformProduct = (product) => {
   }
 }
 
-// 내 상품 목록 불러오기
-const fetchMyProducts = async () => {
-  loading.value = true
-  try {
-    const response = await productApi.getMyProducts()
-    console.log('내 상품 목록:', response.data)
 
-    // 백엔드 응답 데이터 변환
-    if (response.data && response.data.data) {
-      sellerProducts.value = response.data.data.map(transformProduct)
-    } else if (Array.isArray(response.data)) {
-      sellerProducts.value = response.data.map(transformProduct)
-    }
-  } catch (error) {
-    console.error('상품 목록 조회 실패:', error)
-    // 에러 시 빈 배열 유지
-    sellerProducts.value = []
-  } finally {
-    loading.value = false
-  }
-}
 
-// 공동구매 데이터 변환
+// 공동구매 데이터 변환 (GroupPurchaseDocument 기준)
 const transformGroupPurchase = (gp) => {
-  // 카테고리 변환 (백엔드 enum -> 한글)
-  const categoryKorean = categoryMap[gp.category] || gp.category || '기타'
+  // embedded product
+  const product = gp.productDocumentEmbedded || {}
 
-  // 이미지 우선순위: 백엔드 이미지 > 카테고리별 기본 이미지
-  let image = gp.imageUrl || gp.image || gp.thumbnailUrl || gp.originalUrl
+  // 카테고리 변환 (ProductDocumentEmbedded.category)
+  const categoryKorean =
+    categoryMap[product.category] ||
+    product.category ||
+    '기타'
+
+  // 이미지 우선순위
+  let image =
+    product.originalUrl ||
+    gp.imageUrl ||
+    gp.thumbnailUrl
+
   if (!image || image.trim() === '') {
-    // category가 있으면 해당 카테고리 이미지, 없으면 기본 이미지
-    image = categoryImages[gp.category] || categoryImages[categoryKorean] || categoryImages['PET']
+    image =
+      categoryImages[product.category] ||
+      categoryImages[categoryKorean]
   }
 
   return {
-    id: gp.groupPurchaseId || gp.id,
+    // ID
+    id: gp.groupPurchaseId,
+
+    // 기본 정보
     title: gp.title,
     description: gp.description,
-    productName: gp.productName || '상품명',
+
+    // 상품 정보
+    productName: gp.title, // 현재 Document 구조상 별도 productName 없음
     category: categoryKorean,
-    discountPrice: gp.discountedPrice || gp.discountPrice || 0,
-    originalPrice: gp.price || gp.originalPrice || 0,
+
+    // 가격
+    discountPrice: gp.discountedPrice || 0,
+    originalPrice: product.price || 0,
+
+    // 수량
     minQuantity: gp.minQuantity,
     maxQuantity: gp.maxQuantity,
     currentCount: gp.currentQuantity || 0,
+
+    // 상태 & 기간
     status: gp.status || 'OPEN',
     startDate: gp.startDate,
     endDate: gp.endDate,
-    image: image
+
+    // 이미지
+    image
   }
 }
 
@@ -1049,9 +1147,8 @@ const getTimeRemaining = (endDate) => {
 
 onMounted(() => {
   loadSellerInfo()
-  fetchMyProducts()
   fetchMyGroupPurchases()
-  loadProducts()
+  searchProducts()      // ✅ 여기
   loadOrders()
   loadGroupPurchases()
 })
@@ -1251,6 +1348,21 @@ onMounted(() => {
   transition: all 0.2s;
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: nowrap;        /* 🔥 줄바꿈 방지 */
+  min-width: 0;             /* 🔥 flex overflow 방지 */
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;           /* 🔥 오른쪽 고정 */
+}
+
 .panel:hover {
   border-color: #3a3a3a;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
@@ -1264,9 +1376,8 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #2a2a2a;
+  flex-wrap: nowrap; /* 🔥 이게 핵심 */
+  padding-bottom: 10px;
 }
 
 .panel-header h2 {
@@ -1279,6 +1390,69 @@ onMounted(() => {
 .panel-header .subtitle {
   font-size: 14px;
   color: #999;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;          /* 🔥 기존 10px → 14px */
+}
+
+.search-bar input {
+  width: 300px;
+  height: 40px;
+  padding: 0 14px;
+  background: #0f0f0f;          /* 🔥 흰색 제거 */
+  border: 2px solid #2a2a2a;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #ffffff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* 검색 input */
+.search-bar select,
+.search-bar .btn {
+  height: 40px;
+}
+
+.search-bar input::placeholder {
+  color: #777;
+}
+
+.search-bar input:focus,
+.search-bar select:focus {
+  outline: none;
+  border-color: #ffffff;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08);
+}
+
+/* 카테고리 select */
+.search-bar select {
+  padding: 0 14px;
+  background: #0f0f0f;
+  border: 2px solid #2a2a2a;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #ffffff;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+/* 검색 버튼 */
+.search-bar .btn {
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* 오른쪽 액션 버튼 */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .link {
@@ -1315,6 +1489,48 @@ onMounted(() => {
   background: #f0f0f0;
   box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
   transform: translateY(-1px);
+}
+
+/* 페이징 */
+/* pagination wrapper (grid 영향 차단) */
+.pagination-wrapper {
+  width: 100%;
+  margin-top: 32px;
+  display: flex;
+  justify-content: center;
+}
+
+/* pagination */
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.page-btn {
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: #0f0f0f;
+  border: 1px solid #2a2a2a;
+  color: #ffffff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: #2a2a2a;
+}
+
+.page-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.page-info {
+  font-size: 14px;
+  color: #cccccc;
+  font-weight: 600;
 }
 
 /* 정산 현황 */
