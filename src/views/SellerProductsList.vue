@@ -10,7 +10,7 @@
         <p>상품 목록을 불러오는 중...</p>
       </div>
 
-      <div v-else-if="allProducts.length === 0" class="empty-state">
+      <div v-else-if="sellerProducts.length === 0" class="empty-state">
         <p>등록된 상품이 없습니다.</p>
         <router-link to="/seller/register/product-register" class="btn btn-primary">
           상품 등록하기
@@ -18,7 +18,7 @@
       </div>
 
       <div v-else class="products-grid">
-        <div v-for="product in allProducts" :key="product.id" class="product-card">
+        <div v-for="product in sellerProducts" :key="product.id" class="product-card">
           <div class="product-image-wrapper">
             <img :src="product.image || product.images?.[0]" :alt="product.title" />
             <div class="product-badges">
@@ -70,10 +70,10 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { productApi } from '@/api/axios'
+import { authAPI } from '@/api/auth'
 
 const router = useRouter()
 
-const allProducts = ref([])
 const loading = ref(false)
 
 // 카테고리 한글 변환
@@ -129,26 +129,29 @@ const transformProduct = (product) => {
     reviewCount: 0
   }
 }
-
+const sellerProducts = ref([])
+const loadingProducts = ref(false)
 const loadProducts = async () => {
-  loading.value = true
+  loadingProducts.value = true
   try {
-    const response = await productApi.getMyProducts()
-    console.log('내 상품 목록 (전체):', response.data)
+    const response = await authAPI.getMyProducts()
+    console.log('내 상품 목록1:', response)
 
-    // 백엔드 응답 데이터 변환
-    if (response.data && response.data.data) {
-      allProducts.value = response.data.data.map(transformProduct)
-    } else if (Array.isArray(response.data)) {
-      allProducts.value = response.data.map(transformProduct)
+    const productsData = response.data || response
+
+    if (Array.isArray(productsData)) {
+      sellerProducts.value = productsData.map(transformProduct)
+    } else if (productsData && Array.isArray(productsData.content)) {
+      // Pageable 객체인 경우
+      sellerProducts.value = productsData.content.map(transformProduct)
+    } else {
+      sellerProducts.value = []
     }
   } catch (error) {
-    console.error('Failed to load products:', error)
-    const errorMessage = error.response?.data?.message || '상품 목록을 불러오는데 실패했습니다.'
-    alert(errorMessage)
-    allProducts.value = []
+    console.error('상품 목록 조회 실패:', error)
+    sellerProducts.value = []
   } finally {
-    loading.value = false
+    loadingProducts.value = false
   }
 }
 

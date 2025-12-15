@@ -82,7 +82,7 @@ export const authAPI = {
     },
     // 내 상품 목록 조회
     getMyProducts: async() => {
-        const response = await api.get(`/products`)
+        const response = await api.get(`/searches/product/search`)
         return response.data;
     },
     // 판매자 주문 내역 조회
@@ -94,5 +94,49 @@ export const authAPI = {
     getGroupPurchases: async() => {
         const response = await api.get(`/purchases`)
         return response.data;
-    }
+    },
+
+    searchProducts: async ({
+        keyword = '',
+        category = '',
+        page = 0,
+        size = 6,
+        sort = 'createdAt,desc'
+      } = {}) => {
+        const response = await api.get('/searches/product/search', {
+          params: {
+            keyword,
+            category,
+            page,
+            size,
+            sort
+          }
+          // ❗ sellerId는 Gateway or axios interceptor에서 Header로 자동 포함된다고 가정
+        })
+
+        return response.data.data
+      },
+
+    searchPurchase: async ({
+        keyword = '',
+        category = '',
+        status = '',
+        page = 0,
+        size = 6,
+        sort = 'createdAt,desc'
+      } = {}) => {
+        const response = await api.get('/searches/purchase/search', {
+          params: {
+            keyword,
+            category,
+            status,
+            page,
+            size,
+            sort
+          }
+          // ❗ sellerId는 Gateway or axios interceptor에서 Header로 자동 포함된다고 가정
+        })
+
+        return response.data.data
+      }
 }

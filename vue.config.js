@@ -1,9 +1,7 @@
 const { defineConfig } = require("@vue/cli-service");
-
 // 환경 변수에서 API URL 가져오기, 없으면 기본값 사용
 const API_BASE_URL =
   process.env.VUE_APP_API_BASE_URL || "http://localhost:8000";
-
 module.exports = defineConfig({
   devServer: {
     host: "0.0.0.0", // 모든 네트워크 인터페이스에서 접근 가능
