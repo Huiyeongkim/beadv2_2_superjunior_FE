@@ -241,14 +241,48 @@
 
 
         <!-- 공동 구매 목록 -->
+        <!-- 공동 구매 목록 -->
         <article class="panel wide">
           <div class="panel-header">
-            <h2>공동 구매 목록</h2>
+            <div class="header-left">
+              <h2>공동 구매 목록</h2>
+
+              <div class="search-bar">
+                <input
+                  v-model="purchaseSearchKeyword"
+                  placeholder="공동구매명을 검색하세요"
+                  @keyup.enter="fetchMyGroupPurchases"
+                />
+
+                <select v-model="purchaseSearchCategory">
+                  <option value="">전체 카테고리</option>
+                  <option value="HOME">생활 & 주방</option>
+                  <option value="FOOD">식품 & 간식</option>
+                  <option value="HEALTH">건강 & 헬스</option>
+                  <option value="BEAUTY">뷰티</option>
+                  <option value="FASHION">패션 & 의류</option>
+                  <option value="ELECTRONICS">전자 & 디지털</option>
+                  <option value="KIDS">유아 & 어린이</option>
+                  <option value="HOBBY">취미</option>
+                  <option value="PET">반려동물</option>
+                </select>
+
+                <button class="btn btn-primary" @click="fetchMyGroupPurchases">
+                  검색
+                </button>
+              </div>
+            </div>
+
             <div class="header-actions">
-              <router-link to="/group-purchases/create" class="btn-new-product">+ 공동구매 등록</router-link>
-              <router-link to="/group-purchases" class="link">전체 보기 →</router-link>
+              <router-link to="/group-purchases/create" class="btn-new-product">
+                + 공동구매 등록
+              </router-link>
+              <router-link to="/group-purchases" class="link">
+                전체 보기 →
+              </router-link>
             </div>
           </div>
+
           <div class="group-purchase-list">
             <div v-if="loadingGroupPurchases" class="loading-state">
               <p>공동구매 목록을 불러오는 중...</p>
@@ -284,6 +318,29 @@
                 <router-link to="/group-purchases/create" class="btn btn-primary">공동구매 등록하기</router-link>
               </div>
             </template>
+          </div>
+          <div v-if="purchaseTotalPages > 1" class="pagination-wrapper">
+            <div class="pagination">
+              <button
+                class="page-btn"
+                :disabled="purchasePage === 0"
+                @click="goToPurchasePage(purchasePage - 1)"
+              >
+                이전
+              </button>
+
+              <span class="page-info">
+                {{ purchasePage + 1 }} / {{ purchaseTotalPages }}
+              </span>
+
+              <button
+                class="page-btn"
+                :disabled="purchasePage + 1 >= purchaseTotalPages"
+                @click="goToPurchasePage(purchasePage + 1)"
+              >
+                다음
+              </button>
+            </div>
           </div>
         </article>
 
@@ -478,14 +535,12 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { sellerProfile, sellerNotices, sellerQna } from '@/data/products'
 import { authAPI } from '@/api/auth'
-import { groupPurchaseApi } from '@/api/axios'
 
 const router = useRouter()
 
 const seller = ref({ ...sellerProfile })
 const sellerProducts = ref([])
 const sellerGroupPurchases = ref([])
-const groupPurchaseList = ref([])
 const orderList = ref([])
 
 const loadingProducts = ref(false)
@@ -970,31 +1025,6 @@ const goToPage = (newPage) => {
   searchProducts()
 }
 
-// 공동 구매 목록 불러오기
-const loadGroupPurchases = async () => {
-  loadingGroupPurchases.value = true
-  try {
-    const response = await authAPI.getGroupPurchases()
-    console.log('공동 구매 목록:', response)
-    
-    const purchasesData = response.data || response
-    
-    if (Array.isArray(purchasesData)) {
-      groupPurchaseList.value = purchasesData
-    } else if (purchasesData && Array.isArray(purchasesData.content)) {
-      // Pageable 객체인 경우
-      groupPurchaseList.value = purchasesData.content
-    } else {
-      groupPurchaseList.value = []
-    }
-  } catch (error) {
-    console.error('공동 구매 목록 조회 실패:', error)
-    groupPurchaseList.value = []
-  } finally {
-    loadingGroupPurchases.value = false
-  }
-}
-
 // 카테고리 한글 변환
 const categoryMap = {
   'HOME': '생활 & 주방',
@@ -1060,16 +1090,10 @@ const transformGroupPurchase = (gp) => {
     '기타'
 
   // 이미지 우선순위
-  let image =
-    product.originalUrl ||
-    gp.imageUrl ||
-    gp.thumbnailUrl
-
-  if (!image || image.trim() === '') {
-    image =
-      categoryImages[product.category] ||
-      categoryImages[categoryKorean]
-  }
+  let image = product.imageUrl || product.image || product.thumbnailUrl
+    if (!image || image.trim() === '') {
+      image = categoryImages[product.category]
+    }
 
   return {
     // ID
@@ -1102,29 +1126,58 @@ const transformGroupPurchase = (gp) => {
   }
 }
 
+//purchase
+const purchaseSearchKeyword = ref('')
+const purchaseSearchCategory = ref('')
+const purchaseStatus = ref('')
+const purchasePage = ref(0)
+const purchaseSize = ref(5)
+const purchaseTotalPages = ref(0)
+const purchaseTotalElements = ref(0)
+
 // 내 공동구매 목록 불러오기
-const fetchMyGroupPurchases = async () => {
+const searchGroupPurchases = async () => {
   loadingGroupPurchases.value = true
   try {
-    const response = await groupPurchaseApi.getMyGroupPurchases()
-    console.log('내 공동구매 목록:', response.data)
-
-    // 백엔드 응답 데이터 변환
-    const data = response.data.data || response.data
-    const content = data.content || data
-
-    if (Array.isArray(content)) {
-      sellerGroupPurchases.value = content.map(transformGroupPurchase)
-    } else if (Array.isArray(data)) {
-      sellerGroupPurchases.value = data.map(transformGroupPurchase)
-    }
+    const response = await authAPI.searchPurchase({
+       keyword: purchaseSearchKeyword.value,
+       category: purchaseSearchCategory.value,
+       status: purchaseStatus.value,
+       page: purchasePage.value,
+       size: purchaseSize.value
+     })
+    sellerGroupPurchases.value = response.content.map(transformGroupPurchase)
+    purchaseTotalPages.value = response.totalPages
+    purchaseTotalElements.value = response.totalElements
   } catch (error) {
     console.error('공동구매 목록 조회 실패:', error)
-    sellerGroupPurchases.value = []
+      sellerGroupPurchases.value = []
+      purchaseTotalPages.value = 0
+      purchaseTotalElements.value = 0
   } finally {
     loadingGroupPurchases.value = false
   }
 }
+
+const goToPurchasePage = (newPage) => {
+  if (newPage < 0 || newPage >= purchaseTotalPages.value) return
+  purchasePage.value = newPage
+  searchGroupPurchases()
+}
+
+watch(purchaseSearchCategory, () => {
+  purchasePage.value = 0
+  searchGroupPurchases()
+})
+
+let purchaseTimer = null
+watch(purchaseSearchKeyword, () => {
+  clearTimeout(purchaseTimer)
+  purchaseTimer = setTimeout(() => {
+    purchasePage.value = 0
+    searchGroupPurchases()
+  }, 300)
+})
 
 // 남은 시간 계산
 const getTimeRemaining = (endDate) => {
@@ -1147,10 +1200,9 @@ const getTimeRemaining = (endDate) => {
 
 onMounted(() => {
   loadSellerInfo()
-  fetchMyGroupPurchases()
+  searchGroupPurchases()
   searchProducts()      // ✅ 여기
   loadOrders()
-  loadGroupPurchases()
 })
 </script>
 

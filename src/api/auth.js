@@ -115,5 +115,28 @@ export const authAPI = {
         })
 
         return response.data.data
+      },
+
+    searchPurchase: async ({
+        keyword = '',
+        category = '',
+        status = '',
+        page = 0,
+        size = 6,
+        sort = 'createdAt,desc'
+      } = {}) => {
+        const response = await api.get('/searches/purchase/search', {
+          params: {
+            keyword,
+            category,
+            status,
+            page,
+            size,
+            sort
+          }
+          // ❗ sellerId는 Gateway or axios interceptor에서 Header로 자동 포함된다고 가정
+        })
+
+        return response.data.data
       }
 }
