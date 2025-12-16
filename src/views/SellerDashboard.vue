@@ -2356,6 +2356,11 @@ onMounted(() => {
   color: #999;
 }
 
+/* 상품 목록의 빈 상태는 grid 전체 너비 차지 */
+.product-list .empty-state {
+  grid-column: 1 / -1;
+}
+
 /* 버튼 */
 .btn {
   padding: 10px 20px;
