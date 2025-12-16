@@ -19,44 +19,115 @@ export const api = axios.create({
 });
 
 /**
- * ✅ 응답 인터셉터
- * - 401 + "만료된 토큰" → refresh 시도
- * - 실패 시 로그인 페이지로 리다이렉트
+ * =========================
+ * Refresh Queue (JS 전용)
+ * =========================
+ */
+let isRefreshing = false;
+let refreshPromise = null; // Promise<void> | null
+let queue = []; // { resolve, reject }[]
+
+function flushQueueSuccess() {
+  queue.forEach(({ resolve }) => resolve());
+  queue = [];
+}
+
+function flushQueueFail(err) {
+  queue.forEach(({ reject }) => reject(err));
+  queue = [];
+}
+
+async function runRefresh() {
+  // 이미 refresh 중이면 같은 Promise 공유
+  if (isRefreshing && refreshPromise) return refreshPromise;
+
+  isRefreshing = true;
+
+  refreshPromise = (async () => {
+    try {
+      await api.get("/auth/refresh");
+      flushQueueSuccess();
+    } catch (e) {
+      flushQueueFail(e);
+      throw e;
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
+/**
+ * =========================
+ * Response Interceptor
+ * =========================
  */
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config;
+    const originalRequest = error.config || {};
     const currentPath = router.currentRoute.value.fullPath;
 
-    if (
-      error.response?.status === 401 &&
-      typeof error.response?.data === "string" &&
-      error.response.data.includes("만료된 토큰")
-    ) {
+    // 네트워크 에러 등 response 없으면 그대로
+    if (!error.response) return Promise.reject(error);
+
+    const status = error.response.status;
+    const reqUrl = originalRequest.url || "";
+
+    // refresh 요청 자체는 인터셉터에서 제외 (무한루프 방지)
+    if (reqUrl.includes("/auth/refresh")) {
+      router.push({ path: "/login", query: { redirect: currentPath } });
+      return Promise.reject(error);
+    }
+
+    // 401 아니면 그대로
+    if (status !== 401) {
+      return Promise.reject(error);
+    }
+
+    // 이미 재시도한 요청이면 반복 금지
+    if (originalRequest._retry) {
+      router.push({ path: "/login", query: { redirect: currentPath } });
+      return Promise.reject(error);
+    }
+
+    // 만료 토큰 판별(문자열 의존) - 가능하면 백엔드 errorCode로 바꾸는 게 더 좋음
+    const data = error.response.data;
+    const isExpired =
+      typeof data === "string" && data.includes("만료된 토큰");
+
+    // 만료가 아닌 401은 바로 로그인
+    if (!isExpired) {
+      router.push({ path: "/login", query: { redirect: currentPath } });
+      return Promise.reject(error);
+    }
+
+    // 만료된 토큰 → refresh 후 원요청 1회 재시도
+    originalRequest._retry = true;
+
+    // refresh 중이면 큐로 대기했다가 refresh 완료 후 재시도
+    if (isRefreshing) {
       try {
-        // 토큰 갱신
-        await api.get("/auth/refresh");
-        // 원래 요청 재시도
-        return api(originalRequest);
-      } catch (refreshError) {
-        router.push({
-          path: "/login",
-          query: { redirect: currentPath },
+        await new Promise((resolve, reject) => {
+          queue.push({ resolve, reject });
         });
-        return Promise.reject(refreshError);
+        return api(originalRequest);
+      } catch (e) {
+        router.push({ path: "/login", query: { redirect: currentPath } });
+        return Promise.reject(e);
       }
     }
 
-    // 그 외 401
-    if (error.response?.status === 401) {
-      router.push({
-        path: "/login",
-        query: { redirect: currentPath },
-      });
+    // refresh를 내가 대표로 수행
+    try {
+      await runRefresh();
+      return api(originalRequest);
+    } catch (e) {
+      router.push({ path: "/login", query: { redirect: currentPath } });
+      return Promise.reject(e);
     }
-
-    return Promise.reject(error);
   }
 );
 
