@@ -101,28 +101,23 @@ const categoryImages = {
   'PET': 'https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=400'
 }
 
-const loadSellerInfo = async () => {
-  console.log('SellerProfile - 받은 판매자 ID:', props.id)
-  try {
-    const response = await api.get(`/sellers/${props.id}`)
-    const sellerData = response.data.data ?? response.data
-    console.log('판매자 정보:', sellerData)
-    seller.value = {
-      name: sellerData.name || sellerData.businessName || '판매자'
-    }
-  } catch (error) {
-    console.error('판매자 정보 조회 실패:', error)
-    seller.value = { name: '판매자' }
-  }
-}
-
 const loadProducts = async () => {
+  console.log('SellerProfile - 받은 판매자 ID:', props.id)
   try {
     const response = await api.get(`/products`, {
       params: { sellerId: props.id }
     })
+    console.log('API 전체 응답:', response.data)
     const productsData = response.data.data ?? response.data
+    console.log('productsData:', productsData)
     const productsList = Array.isArray(productsData) ? productsData : productsData.content ?? []
+    console.log('productsList:', productsList)
+    console.log('첫 번째 상품:', productsList[0])
+
+    // 첫 번째 상품에서 판매자 이름 가져오기
+    if (productsList.length > 0 && productsList[0].sellerName) {
+      seller.value = { name: productsList[0].sellerName }
+    }
 
     sellerProducts.value = productsList.map(product => {
       const categoryKorean = categoryMap[product.category] || product.category || '기타'
@@ -152,14 +147,12 @@ const goToProduct = (id) => {
 }
 
 onMounted(() => {
-  loadSellerInfo()
   loadProducts()
 })
 
 watch(
   () => props.id,
   () => {
-    loadSellerInfo()
     loadProducts()
   }
 )
