@@ -194,6 +194,19 @@ export const groupPurchaseApi = {
     if (sort) params.sort = sort;
     return api.get("/searches/purchase/search", { params });
   },
+
+  searchAllGroupPurchases: ({
+      keyword = "",
+      status = "OPEN",
+      category = "",
+      page = 0,
+      size = 10,
+      sort,
+    } = {}) => {
+      const params = { keyword, status, category, page, size };
+      if (sort) params.sort = sort;
+      return api.get("/searches/purchase/search/all", { params });
+    },
 };
 
 // 알림 관련 API

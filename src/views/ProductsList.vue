@@ -370,7 +370,7 @@ const mapToProductCard = (gp) => {
 const loadProducts = async () => {
   loading.value = true
   try {
-    const res = await groupPurchaseApi.searchGroupPurchases({
+    const res = await groupPurchaseApi.searchAllGroupPurchases({
                          keyword: keyword.value,
                          status: selectedStatus.value,
                          category: selectedCategory.value,

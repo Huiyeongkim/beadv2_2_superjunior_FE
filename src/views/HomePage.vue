@@ -392,7 +392,7 @@ const isUrgent = (endDate) => {
 
 //진행 중인 공동구매 중 참여 수량이 제일 많은 항목 불러오기
 const fetchPopularProducts = async () => {
-  const res = await groupPurchaseApi.searchGroupPurchases({
+  const res = await groupPurchaseApi.searchAllGroupPurchases({
     status: 'OPEN',
     sort: 'currentQuantity,desc',
     size: 3
@@ -459,7 +459,7 @@ const mapToProductCard = (gp) => {
 const endingProducts = ref([])
 
 const fetchEndingProducts = async () => {
-  const res = await groupPurchaseApi.searchGroupPurchases({
+  const res = await groupPurchaseApi.searchAllGroupPurchases({
     status: 'OPEN',
     sort: 'endDate,asc',
     size: 3
@@ -472,7 +472,7 @@ const fetchEndingProducts = async () => {
 const newProducts = ref([])
 
 const fetchNewProducts = async () => {
-  const res = await groupPurchaseApi.searchGroupPurchases({
+  const res = await groupPurchaseApi.searchAllGroupPurchases({
     status: 'OPEN',
     sort: 'startDate,desc',
     size: 3
