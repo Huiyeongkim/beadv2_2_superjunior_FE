@@ -173,8 +173,8 @@ const requestCharge = async () => {
       orderId: orderId,
       orderName: orderName,
       customerName: localStorage.getItem('user_name') || '사용자',
-      successUrl: `${window.location.origin}/point/charge/success`,
-      failUrl: `${window.location.origin}/point/charge/fail`, 
+      successUrl: 'https://0982.store/api/payments/confirm',
+      failUrl: `https://0982.store/api/payments/fail`
     })
 
   } catch (error) {
