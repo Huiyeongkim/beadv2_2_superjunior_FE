@@ -44,19 +44,19 @@ const amount = ref('')
 
 onMounted(async () => {
   // URL 쿼리 파라미터에서 실패 정보 추출
-  const code = route.query.code
+  // 백엔드가 리다이렉트할 때 message 쿼리 파라미터로 전달
   const message = route.query.message
+  const code = route.query.code
   orderId.value = route.query.orderId || ''
   amount.value = route.query.amount || ''
 
-  // 에러 메시지 설정
+  // 에러 메시지 설정 (message 우선, 없으면 code로 메시지 생성)
   if (message) {
-    errorMessage.value = message
+    // URL 인코딩된 값일 수 있으므로 디코딩
+    errorMessage.value = decodeURIComponent(message)
   } else if (code) {
     errorMessage.value = getErrorMessage(code)
   }
-
-  
 })
 
 const getErrorMessage = (code) => {
