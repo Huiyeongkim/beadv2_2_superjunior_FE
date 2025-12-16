@@ -40,7 +40,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import api from '@/api/axios'
 
 const router = useRouter()
 const route = useRoute()
@@ -53,29 +52,12 @@ const orderId = ref('')
 onMounted(async () => {
   try {
     // URL 쿼리 파라미터에서 결제 정보 추출
-    const paymentKey = route.query.paymentKey
     const orderIdParam = route.query.orderId
     const amount = route.query.amount
 
     orderId.value = orderIdParam || ''
     chargeAmount.value = parseInt(amount) || 0
 
-    // 백엔드 API 호출하여 결제 승인 (GET 요청, 쿼리 파라미터로 전달)
-    const response = await api.get('/payments/confirm', {
-      params: {
-        paymentKey: paymentKey,
-        orderId: orderIdParam,
-        amount: amount
-      },
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('access_token')}`
-      }
-    })
-
-    console.log('결제 승인 성공:', response.data)
-
-    // 응답 데이터에서 총 포인트 설정
-    totalPoints.value = response.data.data?.totalPoints || (chargeAmount.value)
     loading.value = false
 
   } catch (error) {

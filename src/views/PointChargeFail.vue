@@ -34,7 +34,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import api from '@/api/axios'
 
 const router = useRouter()
 const route = useRoute()
@@ -57,19 +56,7 @@ onMounted(async () => {
     errorMessage.value = getErrorMessage(code)
   }
 
-  // 백엔드에 실패 로그 전송 (GET 요청, 쿼리 파라미터로 전달)
-  try {
-    await api.get('/api/points/fail', {
-      params: {
-        code: code,
-        message: message,
-        orderId: orderId.value
-      }
-    })
-    console.log('결제 실패 로그 전송 성공')
-  } catch (error) {
-    console.error('결제 실패 로그 전송 실패:', error)
-  }
+  
 })
 
 const getErrorMessage = (code) => {
