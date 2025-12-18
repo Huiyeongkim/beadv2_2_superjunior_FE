@@ -2,13 +2,11 @@
   <div id="app">
     <SiteHeader />
     <router-view />
-    <FloatingCart />
   </div>
 </template>
 
 <script setup>
 import SiteHeader from './components/SiteHeader.vue'
-import FloatingCart from './components/FloatingCart.vue'
 </script>
 
 <style>
