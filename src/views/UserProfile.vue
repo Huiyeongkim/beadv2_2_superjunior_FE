@@ -1992,11 +1992,11 @@ const passwordForm = ref({
 const changingPassword = ref(false)
 
 // 계정 설정 - 회원 탈퇴
-const showDeleteAccountModal = ref(false)
-const deleteAccountForm = ref({
-  password: ''
-})
-const deletingAccount = ref(false)
+// const showDeleteAccountModal = ref(false)
+// const deleteAccountForm = ref({
+//   password: ''
+// })
+// const deletingAccount = ref(false)
 
 // 알림 설정
 const notificationSettings = ref([])
@@ -2926,31 +2926,6 @@ const handleChangePassword = async () => {
     alert(error.response?.data?.message || '비밀번호 변경에 실패했습니다.')
   } finally {
     changingPassword.value = false
-  }
-}
-
-// 회원 탈퇴
-const handleDeleteAccount = async () => {
-  if (!deleteAccountForm.value.password) {
-    alert('비밀번호를 입력해주세요.')
-    return
-  }
-
-  deletingAccount.value = true
-  try {
-    await authAPI.deleteAccount(deleteAccountForm.value.password)
-
-    alert('회원 탈퇴가 완료되었습니다.')
-
-    // 로그아웃 처리
-    localStorage.clear()
-    router.push('/')
-  } catch (error) {
-    console.error('회원 탈퇴 실패:', error)
-    alert(error.response?.data?.message || '회원 탈퇴에 실패했습니다.')
-  } finally {
-    deletingAccount.value = false
-    showDeleteAccountModal.value = false
   }
 }
 
