@@ -428,7 +428,8 @@
               </form>
             </div>
 
-            <!-- 회원 탈퇴 -->
+            <!-- 회원 탈퇴 (임시 비활성화) -->
+            <!--
             <div class="panel danger-zone">
               <div class="panel-header">
                 <h3>회원 탈퇴</h3>
@@ -449,6 +450,7 @@
                 </button>
               </div>
             </div>
+            -->
           </section>
 
           <!-- 알림 설정 -->
@@ -1404,7 +1406,8 @@
       </div>
     </div>
 
-    <!-- 회원 탈퇴 확인 모달 -->
+    <!-- 회원 탈퇴 확인 모달 (임시 비활성화) -->
+    <!--
     <div
       v-if="showDeleteAccountModal"
       class="modal-overlay"
@@ -1451,6 +1454,7 @@
         </div>
       </div>
     </div>
+    -->
   </main>
 </template>
 
