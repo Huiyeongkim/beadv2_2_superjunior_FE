@@ -36,6 +36,11 @@ export const authAPI = {
         })
         return response.data;
     },
+    // 토큰 리프레시
+    refresh: async() => {
+        const response = await api.get(`/auth/refresh`)
+        return response.data;
+    },
     // 로그아웃
     logout: async() => {
         const response = await authApi.get(`/auth/logout`)
