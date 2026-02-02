@@ -265,9 +265,7 @@ const handleSubmit = async () => {
       accountHolder: form.value.accountHolder,
       businessRegistrationNumber: form.value.businessRegistrationNumber
     })
-    await authAPI.refresh()
-
-
+    
     alert(response.message || '판매자 신청이 완료되었습니다. 검토 후 연락드리겠습니다.')
     
     // 사용자 역할 업데이트 (백엔드에서 처리할 수도 있음)

@@ -18,42 +18,42 @@
               <h4 class="nav-section-title">계정 정보</h4>
               <button
                 :class="['nav-item', { active: activeMenu === 'profile' }]"
-                @click="activeMenu = 'profile'"
+                @click="setActiveMenu('profile')"
               >
                 <span class="nav-icon">👤</span>
                 <span>기본 정보</span>
               </button>
               <button
                 :class="['nav-item', { active: activeMenu === 'address' }]"
-                @click="activeMenu = 'address'"
+                @click="setActiveMenu('address')"
               >
                 <span class="nav-icon">📍</span>
                 <span>주소 관리</span>
               </button>
               <button
                 :class="['nav-item', { active: activeMenu === 'point' }]"
-                @click="activeMenu = 'point'"
+                @click="setActiveMenu('point')"
               >
                 <span class="nav-icon">💰</span>
                 <span>포인트</span>
               </button>
               <button
                 :class="['nav-item', { active: activeMenu === 'payments' }]"
-                @click="activeMenu = 'payments'"
+                @click="setActiveMenu('payments')"
               >
                 <span class="nav-icon">💳</span>
                 <span>결제 내역</span>
               </button>
               <button
                 :class="['nav-item', { active: activeMenu === 'account-settings' }]"
-                @click="activeMenu = 'account-settings'"
+                @click="setActiveMenu('account-settings')"
               >
                 <span class="nav-icon">⚙️</span>
                 <span>계정 설정</span>
               </button>
               <button
                 :class="['nav-item', { active: activeMenu === 'notification-settings' }]"
-                @click="activeMenu = 'notification-settings'"
+                @click="setActiveMenu('notification-settings')"
               >
                 <span class="nav-icon">🔔</span>
                 <span>알림 설정</span>
@@ -64,14 +64,14 @@
               <h4 class="nav-section-title">쇼핑 정보</h4>
               <button
                 :class="['nav-item', { active: activeMenu === 'orders' }]"
-                @click="activeMenu = 'orders'"
+                @click="setActiveMenu('orders')"
               >
                 <span class="nav-icon">📦</span>
                 <span>주문 내역</span>
               </button>
               <button
                 :class="['nav-item', { active: activeMenu === 'cancelled-orders' }]"
-                @click="activeMenu = 'cancelled-orders'"
+                @click="setActiveMenu('cancelled-orders')"
               >
                 <span class="nav-icon">❌</span>
                 <span>주문 취소내역</span>
@@ -428,8 +428,7 @@
               </form>
             </div>
 
-            <!-- 회원 탈퇴 (임시 비활성화) -->
-            <!--
+            <!-- 회원 탈퇴 -->
             <div class="panel danger-zone">
               <div class="panel-header">
                 <h3>회원 탈퇴</h3>
@@ -450,7 +449,6 @@
                 </button>
               </div>
             </div>
-            -->
           </section>
 
           <!-- 알림 설정 -->
@@ -1406,8 +1404,7 @@
       </div>
     </div>
 
-    <!-- 회원 탈퇴 확인 모달 (임시 비활성화) -->
-    <!--
+    <!-- 회원 탈퇴 확인 모달 -->
     <div
       v-if="showDeleteAccountModal"
       class="modal-overlay"
@@ -1454,7 +1451,6 @@
         </div>
       </div>
     </div>
-    -->
   </main>
 </template>
 
@@ -1471,6 +1467,14 @@ const route = useRoute()
 
 // 활성 메뉴 (기본값: 프로필)
 const activeMenu = ref('profile')
+
+const setActiveMenu = (menu) => {
+  activeMenu.value = menu
+  router.replace({
+    path: '/me/profile',
+    query: { ...route.query, tab: menu }
+  })
+}
 
 const syncActiveMenuFromRoute = () => {
   const tab = route.query.tab
@@ -1992,11 +1996,11 @@ const passwordForm = ref({
 const changingPassword = ref(false)
 
 // 계정 설정 - 회원 탈퇴
-// const showDeleteAccountModal = ref(false)
-// const deleteAccountForm = ref({
-//   password: ''
-// })
-// const deletingAccount = ref(false)
+const showDeleteAccountModal = ref(false)
+const deleteAccountForm = ref({
+  password: ''
+})
+const deletingAccount = ref(false)
 
 // 알림 설정
 const notificationSettings = ref([])
@@ -2230,7 +2234,7 @@ const loadCancelledOrders = async (page = 0) => {
 }
 
 const openSellerMenu = (menu) => {
-  activeMenu.value = menu
+  setActiveMenu(menu)
 }
 
 const goToSellerSettlement = () => {
@@ -2241,12 +2245,20 @@ const goToSellerProducts = () => {
   router.push('/seller/products')
 }
 
+const getProfileReturnPath = () => `/me/profile?tab=${activeMenu.value}`
+
 const goToProductRegister = () => {
-  router.push('/seller/register/product-register')
+  router.push({
+    path: '/seller/register/product-register',
+    query: { from: getProfileReturnPath() }
+  })
 }
 
 const goToGroupPurchaseCreate = () => {
-  router.push('/group-purchases/create')
+  router.push({
+    path: '/group-purchases/create',
+    query: { from: getProfileReturnPath() }
+  })
 }
 
 const goToGroupPurchaseManage = () => {
@@ -2926,6 +2938,31 @@ const handleChangePassword = async () => {
     alert(error.response?.data?.message || '비밀번호 변경에 실패했습니다.')
   } finally {
     changingPassword.value = false
+  }
+}
+
+// 회원 탈퇴
+const handleDeleteAccount = async () => {
+  if (!deleteAccountForm.value.password) {
+    alert('비밀번호를 입력해주세요.')
+    return
+  }
+
+  deletingAccount.value = true
+  try {
+    await authAPI.deleteAccount(deleteAccountForm.value.password)
+
+    alert('회원 탈퇴가 완료되었습니다.')
+
+    // 로그아웃 처리
+    localStorage.clear()
+    router.push('/')
+  } catch (error) {
+    console.error('회원 탈퇴 실패:', error)
+    alert(error.response?.data?.message || '회원 탈퇴에 실패했습니다.')
+  } finally {
+    deletingAccount.value = false
+    showDeleteAccountModal.value = false
   }
 }
 
